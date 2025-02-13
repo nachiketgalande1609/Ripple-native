@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { getProfile, getUserPosts } from "@/services/api";
-import { View, Text, StyleSheet, Dimensions, Image } from "react-native";
+import { View, Text, StyleSheet, Dimensions, Image, FlatList, TouchableOpacity, ScrollView } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
-const { width, height } = Dimensions.get("window");
+
+const { width } = Dimensions.get("window");
 
 interface Profile {
     username: string;
@@ -21,9 +22,6 @@ interface Profile {
 export default function Profile() {
     const [profileData, setProfileData] = useState<Profile | null>(null);
     const [posts, setPosts] = useState<any[]>([]);
-    const [selectedPost, setSelectedPost] = useState<any | null>(null);
-    const [isFollowing, setIsFollowing] = useState<boolean>(false);
-    const [openDialog, setOpenDialog] = useState(false);
 
     const userId = 10;
 
@@ -52,14 +50,14 @@ export default function Profile() {
     useEffect(() => {
         fetchProfile();
         fetchUserPosts();
-    }, []);
+    }, [userId]);
 
     if (!profileData) {
         return <Text>Loading...</Text>;
     }
 
     return (
-        <View style={{ flex: 1, alignItems: "center", backgroundColor: "#000000", padding: 0 }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: "#000000" }}>
             <View style={styles.banner}>
                 <Svg width="100%" height="300">
                     <Defs>
@@ -91,7 +89,22 @@ export default function Profile() {
                     </View>
                 </View>
             </View>
-        </View>
+
+            <View style={{ flex: 1 }}>
+                <FlatList
+                    data={posts}
+                    keyExtractor={(item, index) => index.toString()}
+                    numColumns={3}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity>
+                            <Image source={{ uri: item.file_url }} style={styles.postImage} />
+                        </TouchableOpacity>
+                    )}
+                    contentContainerStyle={styles.postsGrid}
+                    scrollEnabled={false} // Prevent FlatList from scrolling independently
+                />
+            </View>
+        </ScrollView>
     );
 }
 
@@ -154,5 +167,15 @@ const styles = StyleSheet.create({
         color: "#888888",
         fontSize: 15,
         fontWeight: "bold",
+    },
+    postsGrid: {
+        paddingTop: 10,
+        paddingHorizontal: 5,
+    },
+    postImage: {
+        width: width / 3 - 6,
+        height: width / 3 - 6,
+        margin: 2,
+        borderRadius: 5,
     },
 });
