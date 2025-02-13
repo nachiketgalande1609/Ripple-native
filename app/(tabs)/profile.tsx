@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getProfile, getUserPosts } from "@/services/api";
 import { View, Text, StyleSheet, Dimensions, Image, FlatList, TouchableOpacity, ScrollView } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
+import useAuthStore from "@/store/authStore";
 
 const { width } = Dimensions.get("window");
 
@@ -23,12 +24,14 @@ export default function Profile() {
     const [profileData, setProfileData] = useState<Profile | null>(null);
     const [posts, setPosts] = useState<any[]>([]);
 
+    const currentUser = useAuthStore((state) => state.user);
+
     const userId = 10;
 
     async function fetchProfile() {
         try {
             if (userId) {
-                const res = await getProfile(userId, 10);
+                const res = await getProfile(userId, currentUser?.id);
                 setProfileData(res.data);
             }
         } catch (error) {

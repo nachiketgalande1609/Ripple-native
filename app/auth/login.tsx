@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import axios from "axios";
 import { saveToken } from "../../utils/auth";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { loginUser } from "@/services/api";
+import useAuthStore from "../../store/authStore"; // Import store
 
 export default function Login() {
+    const { setUser } = useAuthStore();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const router = useRouter();
@@ -14,10 +16,11 @@ export default function Login() {
     const handleLogin = async () => {
         try {
             const response = await loginUser({ email, password });
-            console.log(response);
 
             if (response.success) {
-                await saveToken(response.data.token);
+                const { token, user } = response.data;
+                await saveToken(token);
+                setUser(user);
                 router.replace("../(tabs)/");
             } else {
                 Alert.alert("Login Failed", response.error);

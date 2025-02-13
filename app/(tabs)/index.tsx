@@ -2,14 +2,17 @@ import React, { useState, useEffect } from "react";
 import { View, Text, FlatList, ActivityIndicator, StyleSheet, Button } from "react-native";
 import { getPosts } from "../../services/api";
 import Post from "../../components/post";
+import useAuthStore from "@/store/authStore";
 
 export default function Home() {
     const [posts, setPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
+    const currentUser = useAuthStore((state) => state.user);
+
     const fetchPosts = async () => {
         try {
-            const res = await getPosts(10);
+            const res = await getPosts(currentUser?.id);
             setPosts(res.data);
         } catch (error) {
             console.log("Error fetching posts", error);
