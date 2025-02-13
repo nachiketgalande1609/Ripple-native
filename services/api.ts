@@ -1,5 +1,5 @@
 import api from "./config";
-import { LOGIN_ENDPOINT, REGISTER_ENDPOINT, POSTS_ENDPOINT } from "./apiEndpoints";
+import { LOGIN_ENDPOINT, REGISTER_ENDPOINT, POSTS_ENDPOINT, GET_PROFILE_ENDPOINT } from "./apiEndpoints";
 
 interface UserRegisterData {
     email: string;
@@ -48,6 +48,34 @@ export const getPosts = async (userId: number) => {
         return response.data;
     } catch (error) {
         console.error("Error fetching posts:", error);
+        throw error;
+    }
+};
+
+export const getProfile = async (userId: number, currentUserId: number) => {
+    try {
+        const response = await api.get(`${GET_PROFILE_ENDPOINT}/${userId}?currentUserId=${currentUserId}`);
+        return response.data;
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(error.message);
+        } else {
+            console.error("Unknown Error");
+        }
+        throw error;
+    }
+};
+
+export const getUserPosts = async (currentUserId: number, userId: number) => {
+    try {
+        const response = await api.post(`${POSTS_ENDPOINT}/${userId}`, { currentUserId });
+        return response.data;
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(error.message);
+        } else {
+            console.error("Unknown Error");
+        }
         throw error;
     }
 };

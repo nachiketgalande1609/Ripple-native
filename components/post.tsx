@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, Text, Image, TextInput, Button, TouchableOpacity, Modal, StyleSheet, Animated, Dimensions } from "react-native";
+import { View, Text, Image, TextInput, Button, TouchableOpacity, StyleSheet, Animated, Dimensions } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get("window");
