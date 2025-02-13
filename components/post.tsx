@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { View, Text, Image, TextInput, Button, TouchableOpacity, Modal, StyleSheet, Animated, Dimensions } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 interface PostProps {
     post: any;
@@ -17,14 +17,13 @@ const Post: React.FC<PostProps> = ({ post, userId, fetchPosts }) => {
     const [comments, setComments] = useState(post.initialComments);
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState(post.content);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [showLikeAnimation, setShowLikeAnimation] = useState(false);
+    const [isDrawerVisible, setIsDrawerVisible] = useState(false);
 
     const likeAnimation = useRef(new Animated.Value(1)).current;
+    const slideAnimation = useRef(new Animated.Value(height)).current;
 
     const handleLike = async () => {
         setIsLiked(!isLiked);
-        setShowLikeAnimation(true);
 
         // Trigger the like animation
         Animated.sequence([
@@ -52,18 +51,29 @@ const Post: React.FC<PostProps> = ({ post, userId, fetchPosts }) => {
     };
 
     const handleEditPost = () => {
-        // API logic for editing the post
         setIsEditing(false);
         fetchPosts();
     };
 
     const handleDeletePost = () => {
-        // API logic for deleting the post
-        setModalVisible(false);
+        setIsDrawerVisible(false);
         fetchPosts();
     };
 
-    console.log("xxx", post);
+    const openCommentDrawer = () => {
+        setIsDrawerVisible(true);
+        Animated.spring(slideAnimation, {
+            toValue: 0,
+            useNativeDriver: true,
+        }).start();
+    };
+
+    const closeCommentDrawer = () => {
+        Animated.spring(slideAnimation, {
+            toValue: height,
+            useNativeDriver: true,
+        }).start(() => setIsDrawerVisible(false));
+    };
 
     return (
         <View style={styles.container}>
@@ -73,7 +83,7 @@ const Post: React.FC<PostProps> = ({ post, userId, fetchPosts }) => {
                     <Image source={{ uri: post.profile_picture }} style={styles.profilePicture} />
                     <Text style={styles.username}>{post.username}</Text>
                 </View>
-                <TouchableOpacity onPress={() => setModalVisible(true)}>
+                <TouchableOpacity onPress={() => setIsDrawerVisible(true)}>
                     <MaterialCommunityIcons name="dots-vertical" size={20} style={{ marginRight: 5 }} color="white" />
                 </TouchableOpacity>
             </View>
@@ -94,7 +104,7 @@ const Post: React.FC<PostProps> = ({ post, userId, fetchPosts }) => {
                 </TouchableOpacity>
                 <Text style={styles.likeCount}>{post.likeCount}</Text>
 
-                <TouchableOpacity onPress={() => {}}>
+                <TouchableOpacity onPress={openCommentDrawer}>
                     <MaterialCommunityIcons name="comment-outline" size={30} color="white" />
                 </TouchableOpacity>
                 <Text style={styles.commentCount}>{commentCount}</Text>
@@ -113,30 +123,24 @@ const Post: React.FC<PostProps> = ({ post, userId, fetchPosts }) => {
                 </View>
             )}
 
-            {/* Comment Input */}
-            <View style={styles.commentSection}>
-                <TextInput style={styles.commentInput} value={commentText} onChangeText={setCommentText} placeholder="Add a comment..." />
-                <Button title="Post" onPress={handleComment} />
-            </View>
-
-            {/* Comments List */}
-            {post.comments.map((comment: any) => (
-                <View key={comment.id} style={styles.comment}>
-                    <Text style={styles.commentUsername}>{comment.commenter_username}</Text>
-                    <Text style={styles.commentContent}>{comment.content}</Text>
-                </View>
-            ))}
-
-            {/* Modal for deleting post */}
-            <Modal transparent={true} visible={modalVisible} animationType="fade" onRequestClose={() => setModalVisible(false)}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalText}>Are you sure you want to delete this post?</Text>
-                        <Button title="Cancel" onPress={() => setModalVisible(false)} />
-                        <Button title="Delete" color="red" onPress={handleDeletePost} />
+            {/* Comments Drawer (Modal) */}
+            {isDrawerVisible && (
+                <Animated.View style={[styles.drawer, { transform: [{ translateY: slideAnimation }] }]}>
+                    <View style={styles.commentSection}>
+                        <TextInput style={styles.commentInput} value={commentText} onChangeText={setCommentText} placeholder="Add a comment..." />
+                        <Button title="Post" onPress={handleComment} />
                     </View>
-                </View>
-            </Modal>
+                    <View style={styles.commentsList}>
+                        {post.comments.map((comment: any) => (
+                            <View key={comment.id} style={styles.comment}>
+                                <Text style={styles.commentUsername}>{comment.commenter_username}</Text>
+                                <Text style={styles.commentContent}>{comment.content}</Text>
+                            </View>
+                        ))}
+                    </View>
+                    <Button title="Close" onPress={closeCommentDrawer} />
+                </Animated.View>
+            )}
         </View>
     );
 };
@@ -219,22 +223,19 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 5,
     },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-    },
-    modalContent: {
+    drawer: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
         backgroundColor: "#101114",
-        padding: 20,
-        borderRadius: 10,
-        width: 300,
-        alignItems: "center",
+        paddingBottom: 50,
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        maxHeight: height - 80, // Prevent it from taking full height
     },
-    modalText: {
-        color: "#ffffff",
-        marginBottom: 10,
+    commentsList: {
+        marginTop: 10,
     },
     comment: {
         marginTop: 10,
