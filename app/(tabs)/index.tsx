@@ -1,9 +1,67 @@
-import { View, Text } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, Button } from "react-native";
+import { getPosts } from "../../services/api";
+import Post from "../../components/post";
 
 export default function Home() {
+    const [posts, setPosts] = useState<any[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+
+    const fetchPosts = async () => {
+        try {
+            const res = await getPosts(10);
+            setPosts(res.data);
+        } catch (error) {
+            console.log("Error fetching posts", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPosts();
+    }, []);
+
     return (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#000000" }}>
-            <Text style={{ color: "#ffffff" }}>Home Page</Text>
+        <View style={styles.container}>
+            {loading ? (
+                <ActivityIndicator size="large" color="#ffffff" />
+            ) : posts.length > 0 ? (
+                <FlatList
+                    data={posts}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={({ item }) => <Post post={item} userId={10} fetchPosts={fetchPosts} />}
+                    contentContainerStyle={styles.postList}
+                />
+            ) : (
+                <View style={styles.noPostsContainer}>
+                    <Text style={styles.noPostsText}>No posts available</Text>
+                    <Text style={styles.noPostsSubText}>Be the first to share something!</Text>
+                </View>
+            )}
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: "#000000",
+    },
+    postList: {
+        paddingBottom: 80, // Space for bottom bar
+    },
+    noPostsContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    noPostsText: {
+        fontSize: 24,
+        color: "#ffffff",
+    },
+    noPostsSubText: {
+        fontSize: 14,
+        color: "#666666",
+    },
+});

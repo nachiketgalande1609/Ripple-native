@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import axios from "axios";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { registerUser } from "@/services/api";
 
 export default function Register() {
     const [email, setEmail] = useState("");
@@ -24,17 +25,17 @@ export default function Register() {
         }
 
         try {
-            const response = await axios.post("http://192.168.1.2:5000/api/auth/register", {
+            const response = await registerUser({
                 email,
                 username,
                 password,
             });
 
-            if (response.data.success) {
+            if (response.success) {
                 Alert.alert("Success", "Registration successful! You can now log in.");
                 router.replace("/auth/login"); // Navigate to login page after successful registration
             } else {
-                Alert.alert("Registration Failed", response.data.error);
+                Alert.alert("Registration Failed", response.error);
             }
         } catch (error) {
             Alert.alert("Error", "Something went wrong. Please try again.");

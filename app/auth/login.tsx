@@ -4,6 +4,7 @@ import axios from "axios";
 import { saveToken } from "../../utils/auth";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { loginUser } from "@/services/api";
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -12,12 +13,14 @@ export default function Login() {
 
     const handleLogin = async () => {
         try {
-            const response = await axios.post("http://192.168.1.2:5000/api/auth/login", { email, password });
-            if (response.data.success) {
-                await saveToken(response.data.data.token);
+            const response = await loginUser({ email, password });
+            console.log(response);
+
+            if (response.success) {
+                await saveToken(response.data.token);
                 router.replace("../(tabs)/");
             } else {
-                Alert.alert("Login Failed", response.data.error);
+                Alert.alert("Login Failed", response.error);
             }
         } catch (error) {
             Alert.alert("Error", "Something went wrong. Please try again.");
