@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import axios from "axios";
 import { saveToken } from "../../utils/auth";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -11,10 +12,10 @@ export default function Login() {
 
     const handleLogin = async () => {
         try {
-            const response = await axios.post("https://your-api.com/auth/login", { email, password });
+            const response = await axios.post("http://192.168.1.2:5000/api/auth/login", { email, password });
             if (response.data.success) {
                 await saveToken(response.data.data.token);
-                router.replace("/"); // Redirect to Home after login
+                router.replace("../(tabs)/");
             } else {
                 Alert.alert("Login Failed", response.data.error);
             }
@@ -25,6 +26,7 @@ export default function Login() {
 
     return (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#000000" }}>
+            <StatusBar style="light" backgroundColor="#000000" />
             <Text style={{ color: "white", fontSize: 22, marginBottom: 20 }}>Login</Text>
             <TextInput
                 style={{ backgroundColor: "#222", color: "white", padding: 10, width: "80%", marginBottom: 10, borderRadius: 8 }}
@@ -42,8 +44,12 @@ export default function Login() {
                 value={password}
                 onChangeText={setPassword}
             />
-            <TouchableOpacity onPress={handleLogin} style={{ backgroundColor: "#7a60ff", padding: 12, borderRadius: 8 }}>
-                <Text style={{ color: "white", fontSize: 16 }}>Login</Text>
+            <TouchableOpacity onPress={handleLogin} style={{ backgroundColor: "#7a60ff", padding: 10, borderRadius: 8, width: "80%", marginTop: 10 }}>
+                <Text style={{ color: "white", fontSize: 16, textAlign: "center" }}>Login</Text>
+            </TouchableOpacity>
+            {/* Register Link */}
+            <TouchableOpacity onPress={() => router.push("/auth/register")} style={{ marginTop: 15 }}>
+                <Text style={{ color: "#7a60ff", fontSize: 16, textAlign: "center" }}>Don't have an account? Register</Text>
             </TouchableOpacity>
         </View>
     );
