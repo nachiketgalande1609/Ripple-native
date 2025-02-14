@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { getProfile, getUserPosts } from "@/services/api";
-import { View, Text, StyleSheet, Dimensions, Image, FlatList, TouchableOpacity, ScrollView, Modal } from "react-native";
+import { View, Text, StyleSheet, Dimensions, Image, FlatList, TouchableOpacity, ScrollView, Modal, TouchableWithoutFeedback } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import useAuthStore from "@/store/authStore";
 import { MaterialIcons } from "@expo/vector-icons";
+import { removeToken } from "../../utils/auth";
+import { useRouter } from "expo-router";
 
 import { useFocusEffect } from "expo-router";
 
@@ -27,6 +29,7 @@ export default function Profile() {
     const [profileData, setProfileData] = useState<Profile | null>(null);
     const [posts, setPosts] = useState<any[]>([]);
     const [menuVisible, setMenuVisible] = useState(false);
+    const router = useRouter();
 
     const currentUser = useAuthStore((state) => state.user);
 
@@ -61,6 +64,11 @@ export default function Profile() {
         }, [userId])
     );
 
+    const handleLogout = async () => {
+        await removeToken();
+        router.replace("/auth/login");
+    };
+
     if (!profileData) {
         return <Text>Loading...</Text>;
     }
@@ -78,10 +86,13 @@ export default function Profile() {
                     <Rect x="0" y="0" width="100%" height="300" fill="url(#gradient)" />
                 </Svg>
                 <TouchableOpacity style={styles.menuIcon} onPress={() => setMenuVisible(true)}>
-                    <MaterialIcons name="more-vert" size={24} color="white" />
+                    <MaterialIcons name="more-vert" size={22} color="white" />
                 </TouchableOpacity>
                 <View style={styles.profileContainer}>
-                    <Image source={{ uri: profileData.profile_picture || "https://via.placeholder.com/150" }} style={styles.profileImage} />
+                    <Image
+                        source={{ uri: profileData.profile_picture || "https://conferenceoeh.com/wp-content/uploads/profile-pic-dummy.png" }}
+                        style={styles.profileImage}
+                    />
                     <Text style={styles.username}>{profileData.username}</Text>
                     <Text style={styles.email}>{profileData.email}</Text>
                     <Text style={styles.bio}>{profileData.bio}</Text>
@@ -113,30 +124,38 @@ export default function Profile() {
                         </TouchableOpacity>
                     )}
                     contentContainerStyle={styles.postsGrid}
-                    scrollEnabled={false} // Prevent FlatList from scrolling independently
+                    scrollEnabled={false}
                 />
             </View>
 
             <Modal visible={menuVisible} transparent animationType="fade">
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <TouchableOpacity style={styles.modalButton} onPress={() => setMenuVisible(false)}>
-                            <Text style={styles.modalText}>Edit Profile</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.modalButton} onPress={() => setMenuVisible(false)}>
-                            <Text style={styles.modalText}>Copy Profile Link</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.modalButton} onPress={() => setMenuVisible(false)}>
-                            <Text style={styles.modalText}>Settings</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.modalButton} onPress={() => setMenuVisible(false)}>
-                            <Text style={styles.modalText}>Logout</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.modalButtonLast} onPress={() => setMenuVisible(false)}>
-                            <Text style={styles.modalText}>Cancel</Text>
-                        </TouchableOpacity>
+                <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContainer}>
+                            <TouchableOpacity style={styles.modalButton} onPress={() => setMenuVisible(false)}>
+                                <Text style={styles.modalText}>Edit Profile</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.modalButton} onPress={() => setMenuVisible(false)}>
+                                <Text style={styles.modalText}>Copy Profile Link</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.modalButton} onPress={() => setMenuVisible(false)}>
+                                <Text style={styles.modalText}>Settings</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.modalButton}
+                                onPress={() => {
+                                    setMenuVisible(false);
+                                    handleLogout();
+                                }}
+                            >
+                                <Text style={styles.modalText}>Logout</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.modalButtonLast} onPress={() => setMenuVisible(false)}>
+                                <Text style={styles.modalText}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                </View>
+                </TouchableWithoutFeedback>
             </Modal>
         </ScrollView>
     );
