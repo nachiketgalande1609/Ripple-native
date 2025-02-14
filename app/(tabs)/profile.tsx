@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { getProfile, getUserPosts } from "@/services/api";
-import { View, Text, StyleSheet, Dimensions, Image, FlatList, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Dimensions, Image, FlatList, TouchableOpacity, ScrollView, Modal } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import useAuthStore from "@/store/authStore";
+import { MaterialIcons } from "@expo/vector-icons";
+
 import { useFocusEffect } from "expo-router";
 
 const { width } = Dimensions.get("window");
@@ -24,6 +26,7 @@ interface Profile {
 export default function Profile() {
     const [profileData, setProfileData] = useState<Profile | null>(null);
     const [posts, setPosts] = useState<any[]>([]);
+    const [menuVisible, setMenuVisible] = useState(false);
 
     const currentUser = useAuthStore((state) => state.user);
 
@@ -74,6 +77,9 @@ export default function Profile() {
                     </Defs>
                     <Rect x="0" y="0" width="100%" height="300" fill="url(#gradient)" />
                 </Svg>
+                <TouchableOpacity style={styles.menuIcon} onPress={() => setMenuVisible(true)}>
+                    <MaterialIcons name="more-vert" size={24} color="white" />
+                </TouchableOpacity>
                 <View style={styles.profileContainer}>
                     <Image source={{ uri: profileData.profile_picture || "https://via.placeholder.com/150" }} style={styles.profileImage} />
                     <Text style={styles.username}>{profileData.username}</Text>
@@ -110,6 +116,28 @@ export default function Profile() {
                     scrollEnabled={false} // Prevent FlatList from scrolling independently
                 />
             </View>
+
+            <Modal visible={menuVisible} transparent animationType="fade">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <TouchableOpacity style={styles.modalButton} onPress={() => setMenuVisible(false)}>
+                            <Text style={styles.modalText}>Edit Profile</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.modalButton} onPress={() => setMenuVisible(false)}>
+                            <Text style={styles.modalText}>Copy Profile Link</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.modalButton} onPress={() => setMenuVisible(false)}>
+                            <Text style={styles.modalText}>Settings</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.modalButton} onPress={() => setMenuVisible(false)}>
+                            <Text style={styles.modalText}>Logout</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.modalButtonLast} onPress={() => setMenuVisible(false)}>
+                            <Text style={styles.modalText}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
     );
 }
@@ -128,6 +156,11 @@ const styles = StyleSheet.create({
     profileContainer: {
         position: "absolute",
         alignItems: "center",
+    },
+    menuIcon: {
+        position: "absolute",
+        top: 0,
+        right: 10,
     },
     profileImage: {
         width: 110,
@@ -183,5 +216,33 @@ const styles = StyleSheet.create({
         height: width / 3 - 6,
         margin: 2,
         borderRadius: 5,
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0,0,0,0.9)",
+    },
+    modalContainer: {
+        backgroundColor: "#202327",
+        borderRadius: 20,
+        width: 275,
+        alignItems: "center",
+    },
+    modalButton: {
+        padding: 10,
+        width: "100%",
+        alignItems: "center",
+        borderBottomWidth: 0.5,
+        borderBottomColor: "#505050",
+    },
+    modalButtonLast: {
+        padding: 10,
+        width: "100%",
+        alignItems: "center",
+    },
+    modalText: {
+        color: "#90CAF9",
+        fontSize: 15,
     },
 });
