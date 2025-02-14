@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getProfile, getUserPosts } from "@/services/api";
 import { View, Text, StyleSheet, Dimensions, Image, FlatList, TouchableOpacity, ScrollView } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import useAuthStore from "@/store/authStore";
+import { useFocusEffect } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
@@ -50,10 +51,12 @@ export default function Profile() {
         }
     }
 
-    useEffect(() => {
-        fetchProfile();
-        fetchUserPosts();
-    }, [userId]);
+    useFocusEffect(
+        useCallback(() => {
+            fetchProfile();
+            fetchUserPosts();
+        }, [userId])
+    );
 
     if (!profileData) {
         return <Text>Loading...</Text>;
