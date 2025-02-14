@@ -7,6 +7,8 @@ import * as SplashScreen from "expo-splash-screen";
 import { useCallback } from "react";
 import { LilyScriptOne_400Regular } from "@expo-google-fonts/lily-script-one";
 import Svg, { Defs, LinearGradient as SvgGradient, Stop, Text as SvgText } from "react-native-svg";
+import useAuthStore from "../../store/authStore";
+import { useRouter, useLocalSearchParams } from "expo-router";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -18,6 +20,10 @@ type TabIconProps = {
 };
 
 export default function TabLayout() {
+    const currentUser = useAuthStore((state) => state.user);
+    const router = useRouter();
+    const { userId } = useLocalSearchParams();
+
     const [fontsLoaded] = useFonts({
         LilyScriptOne: LilyScriptOne_400Regular,
     });
@@ -106,6 +112,14 @@ export default function TabLayout() {
                     options={{
                         title: "Profile",
                         tabBarIcon: ({ color, focused, size }) => <TabIcon name="person" focused={focused} color={color} size={size} />,
+                    }}
+                    listeners={{
+                        tabPress: (e) => {
+                            e.preventDefault(); // Prevent default tab navigation
+                            if (currentUser?.id) {
+                                router.push(`/profile?userId=${currentUser.id}`); // Navigate with userId as query param
+                            }
+                        },
                     }}
                 />
             </Tabs>

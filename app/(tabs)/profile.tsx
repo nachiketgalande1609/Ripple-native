@@ -32,14 +32,16 @@ export default function Profile() {
     const router = useRouter();
 
     const currentUser = useAuthStore((state) => state.user);
-    const { userId } = useLocalSearchParams(); // Get userId from params if available
 
-    const profileUserId = userId || currentUser?.id;
+    const { userId: rawUserId } = useLocalSearchParams();
+    const userId = Number(Array.isArray(rawUserId) ? rawUserId[0] : rawUserId);
+
+    console.log(userId);
 
     async function fetchProfile() {
         try {
-            if (profileUserId) {
-                const res = await getProfile(profileUserId, currentUser?.id);
+            if (userId) {
+                const res = await getProfile(userId, currentUser?.id);
                 setProfileData(res.data);
             }
         } catch (error) {
@@ -49,8 +51,8 @@ export default function Profile() {
 
     async function fetchUserPosts() {
         try {
-            if (profileUserId) {
-                const res = await getUserPosts(10, profileUserId);
+            if (userId) {
+                const res = await getUserPosts(10, userId);
                 setPosts(res.data);
             }
         } catch (error) {
