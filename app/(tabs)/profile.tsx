@@ -36,8 +36,6 @@ export default function Profile() {
     const { userId: rawUserId } = useLocalSearchParams();
     const userId = Number(Array.isArray(rawUserId) ? rawUserId[0] : rawUserId);
 
-    console.log(userId);
-
     async function fetchProfile() {
         try {
             if (userId) {
