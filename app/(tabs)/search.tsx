@@ -27,6 +27,7 @@ export default function SearchPage() {
                 }
             };
             loadHistory();
+            setSearchQuery("");
         }, [currentUser?.id])
     );
 
@@ -53,8 +54,9 @@ export default function SearchPage() {
         try {
             await addToSearchHistory(currentUser?.id, targetUser.id);
             const historyResponse = await getSearchHistory(currentUser?.id);
-            setHistory(historyResponse.data.data);
-            router.replace("../(tabs)/profile");
+            setHistory(historyResponse.data);
+
+            router.push(`/(tabs)/profile?userId=${targetUser.id}`);
         } catch (error) {
             console.error("Error saving history:", error);
         }
@@ -99,7 +101,7 @@ export default function SearchPage() {
                             <Text style={{ color: "gray" }}>{item.email}</Text>
                         </View>
                         {history.includes(item) && (
-                            <IconButton icon="close" size={16} iconColor="#3B3B3B" onPress={() => handleDeleteHistory(item.history_id)} />
+                            <IconButton icon="close" size={20} iconColor="#3B3B3B" onPress={() => handleDeleteHistory(item.history_id)} />
                         )}
                     </TouchableOpacity>
                 )}

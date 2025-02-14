@@ -5,7 +5,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import useAuthStore from "@/store/authStore";
 import { MaterialIcons } from "@expo/vector-icons";
 import { removeToken } from "../../utils/auth";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 
 import { useFocusEffect } from "expo-router";
 
@@ -32,13 +32,14 @@ export default function Profile() {
     const router = useRouter();
 
     const currentUser = useAuthStore((state) => state.user);
+    const { userId } = useLocalSearchParams(); // Get userId from params if available
 
-    const userId = 10;
+    const profileUserId = userId || currentUser?.id;
 
     async function fetchProfile() {
         try {
-            if (userId) {
-                const res = await getProfile(userId, currentUser?.id);
+            if (profileUserId) {
+                const res = await getProfile(profileUserId, currentUser?.id);
                 setProfileData(res.data);
             }
         } catch (error) {
@@ -48,8 +49,8 @@ export default function Profile() {
 
     async function fetchUserPosts() {
         try {
-            if (userId) {
-                const res = await getUserPosts(10, userId);
+            if (profileUserId) {
+                const res = await getUserPosts(10, profileUserId);
                 setPosts(res.data);
             }
         } catch (error) {
