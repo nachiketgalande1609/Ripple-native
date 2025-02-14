@@ -3,17 +3,20 @@ import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
+import useAuthStore from "@/store/authStore";
 
 const TOKEN_KEY = "authToken";
 
 export default function RootLayout() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const currentUser = useAuthStore((state) => state.user);
 
     useEffect(() => {
         const checkAuth = async () => {
             const token = await AsyncStorage.getItem(TOKEN_KEY);
-            if (!token) {
+
+            if (!token || !currentUser) {
                 router.replace("/auth/login");
             }
             setLoading(false);
