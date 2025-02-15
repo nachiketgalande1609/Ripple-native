@@ -2,6 +2,7 @@ import useAuthStore from "@/store/authStore";
 import React from "react";
 import { View, FlatList, Text, StyleSheet, Image } from "react-native";
 import MessageInput from "./MessageInput";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
 type Message = {
     message_id: number;
@@ -35,6 +36,12 @@ interface MessageContainerProps {
 export default function MessagesContainer({ messages, selectedUser, inputMessage, setInputMessage, handleSendMessage }: MessageContainerProps) {
     const currentUser = useAuthStore((state) => state.user);
 
+    const getStatusIcon = (item: Message) => {
+        if (item.read) return <MaterialCommunityIcons name="check-all" size={16} color="#2196F3" />;
+        if (item.delivered) return <MaterialCommunityIcons name="check-all" size={16} color="#bbb" />;
+        return <MaterialCommunityIcons name="check" size={16} color="#bbb" />;
+    };
+
     return (
         <View style={{ flex: 1 }}>
             <FlatList
@@ -42,11 +49,6 @@ export default function MessagesContainer({ messages, selectedUser, inputMessage
                 keyExtractor={(item) => item.message_id.toString()}
                 renderItem={({ item }) => {
                     const isCurrentUser = item.sender_id === currentUser.id;
-
-                    // Determine read receipt icon
-                    let statusIcon = "✔"; // Single tick for saved
-                    if (item.delivered) statusIcon = "✔✔"; // Double tick for delivered
-                    if (item.read) statusIcon = "✔✔"; // Blue double tick for read
 
                     return (
                         <View style={[styles.messageWrapper, isCurrentUser && styles.currentUserWrapper]}>
@@ -79,7 +81,7 @@ export default function MessagesContainer({ messages, selectedUser, inputMessage
                                     {new Date(item.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })}
                                 </Text>
                             </View>
-                            {isCurrentUser && <Text style={[styles.statusIcon, item.read ? styles.readColor : null]}>{statusIcon}</Text>}
+                            {isCurrentUser && <Text style={styles.statusIcon}>{getStatusIcon(item)}</Text>}
                         </View>
                     );
                 }}
@@ -100,7 +102,7 @@ const styles = StyleSheet.create({
     },
     currentUserWrapper: {
         alignSelf: "flex-end",
-        flexDirection: "row", // Push read receipt outside the message box
+        flexDirection: "row",
     },
     messageItem: {
         paddingVertical: 8,
@@ -115,7 +117,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: "#bbb",
         marginTop: 4,
-        alignSelf: "flex-end", // Keep timestamp inside message bubble
+        alignSelf: "flex-end",
     },
     statusIcon: {
         fontSize: 12,

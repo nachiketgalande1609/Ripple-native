@@ -178,6 +178,93 @@ export default function Messages() {
         };
     }, [currentUser]);
 
+    useEffect(() => {
+        socket.on("messageSaved", (data: { tempId: number; messageId: number }) => {
+            setMessages((prevMessages) => {
+                const newMessages = { ...prevMessages };
+
+                Object.keys(newMessages).forEach((userId) => {
+                    newMessages[userId] = newMessages[userId].map((msg) =>
+                        msg.message_id === data.tempId ? { ...msg, message_id: data.messageId, saved: true } : msg
+                    );
+                });
+
+                return newMessages;
+            });
+        });
+
+        return () => {
+            socket.off("messageSaved");
+        };
+    }, []);
+
+    useEffect(() => {
+        socket.on("messageDelivered", (data: { messageId: number; deliveredTimestamp: string | null }) => {
+            setMessages((prevMessages) => {
+                const newMessages = { ...prevMessages };
+
+                Object.keys(newMessages).forEach((userId) => {
+                    newMessages[userId] = newMessages[userId].map((msg) =>
+                        msg.message_id === data.messageId ? { ...msg, delivered: true, delivered_timestamp: data.deliveredTimestamp } : msg
+                    );
+                });
+
+                return newMessages;
+            });
+        });
+
+        return () => {
+            socket.off("messageDelivered");
+        };
+    }, []);
+
+    useEffect(() => {
+        if (selectedUser && messages[selectedUser.id]) {
+            const unreadMessages = messages[selectedUser.id].filter((msg) => msg.sender_id === selectedUser.id && !msg.read);
+
+            if (unreadMessages.length > 0) {
+                const messageIds = unreadMessages.map((msg) => msg.message_id).filter((id) => !!id);
+
+                if (messageIds.length > 0) {
+                    socket.emit("messageRead", {
+                        senderId: selectedUser.id,
+                        receiverId: currentUser.id,
+                        messageIds,
+                    });
+
+                    setMessages((prevMessages) => {
+                        const updatedMessages = { ...prevMessages };
+                        updatedMessages[selectedUser.id] = updatedMessages[selectedUser.id].map((msg) =>
+                            messageIds.includes(msg.message_id) ? { ...msg, read: true } : msg
+                        );
+                        return updatedMessages;
+                    });
+                }
+            }
+        }
+    }, [selectedUser, messages]);
+
+    useEffect(() => {
+        socket.on("messageRead", (data: { receiverId: number; messageIds: { messageId: number; readTimestamp: string }[] }) => {
+            setMessages((prevMessages) => {
+                const updatedMessages = { ...prevMessages };
+
+                if (updatedMessages[data.receiverId]) {
+                    updatedMessages[data.receiverId] = updatedMessages[data.receiverId].map((msg) => {
+                        const readMessage = data.messageIds.find((m) => m.messageId === msg.message_id);
+                        return readMessage ? { ...msg, read: true, read_timestamp: readMessage.readTimestamp } : msg;
+                    });
+                }
+
+                return updatedMessages;
+            });
+        });
+
+        return () => {
+            socket.off("messageRead");
+        };
+    }, []);
+
     return (
         <DrawerLayoutAndroid
             ref={drawerRef}
