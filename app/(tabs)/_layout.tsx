@@ -9,6 +9,7 @@ import { LilyScriptOne_400Regular } from "@expo-google-fonts/lily-script-one";
 import Svg, { Defs, LinearGradient as SvgGradient, Stop, Text as SvgText } from "react-native-svg";
 import useAuthStore from "../../store/authStore";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import useNotificationMessagesStore from "@/store/unreadNotificationAndMessagesStore";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -17,12 +18,15 @@ type TabIconProps = {
     focused: boolean;
     color: string;
     size: number;
+    badgeCount?: number;
 };
 
 export default function TabLayout() {
     const currentUser = useAuthStore((state) => state.user);
     const router = useRouter();
     const { userId } = useLocalSearchParams();
+
+    const { unreadMessagesCount, unreadNotificationsCount, resetUnreadNotifications } = useNotificationMessagesStore();
 
     const [fontsLoaded] = useFonts({
         LilyScriptOne: LilyScriptOne_400Regular,
@@ -97,14 +101,21 @@ export default function TabLayout() {
                     name="messages"
                     options={{
                         title: "Messages",
-                        tabBarIcon: ({ color, focused, size }) => <TabIcon name="chatbubble" focused={focused} color={color} size={size} />,
+                        tabBarIcon: ({ color, focused, size }) => (
+                            <TabIcon name="chatbubble" focused={focused} color={color} size={size} badgeCount={unreadMessagesCount} />
+                        ),
                     }}
                 />
                 <Tabs.Screen
                     name="notifications"
                     options={{
                         title: "Notifications",
-                        tabBarIcon: ({ color, focused, size }) => <TabIcon name="notifications" focused={focused} color={color} size={size} />,
+                        tabBarIcon: ({ color, focused, size }) => (
+                            <TabIcon name="notifications" focused={focused} color={color} size={size} badgeCount={unreadNotificationsCount} />
+                        ),
+                    }}
+                    listeners={{
+                        tabPress: () => resetUnreadNotifications(),
                     }}
                 />
                 <Tabs.Screen
@@ -127,8 +138,7 @@ export default function TabLayout() {
     );
 }
 
-// Component for tab icons
-const TabIcon = ({ name, focused, color, size }: TabIconProps) => {
+const TabIcon = ({ name, focused, color, size, badgeCount = 0 }: TabIconProps) => {
     return (
         <View
             style={{
@@ -137,14 +147,31 @@ const TabIcon = ({ name, focused, color, size }: TabIconProps) => {
                 height: 45,
                 borderTopLeftRadius: 12,
                 borderTopRightRadius: 12,
-                borderBottomLeftRadius: 0,
-                borderBottomRightRadius: 0,
                 justifyContent: "center",
                 alignItems: "center",
                 marginTop: 5,
+                position: "relative",
             }}
         >
             <Ionicons name={focused ? name : `${name}-outline`} size={size} color={color} />
+            {badgeCount > 0 && (
+                <View
+                    style={{
+                        position: "absolute",
+                        top: 3,
+                        right: 20,
+                        backgroundColor: "red",
+                        borderRadius: 12,
+                        minWidth: 18,
+                        height: 18,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        paddingHorizontal: 4,
+                    }}
+                >
+                    <Text style={{ color: "white", fontSize: 12, fontWeight: "bold" }}>{badgeCount > 99 ? "99+" : badgeCount}</Text>
+                </View>
+            )}
         </View>
     );
 };
