@@ -8,10 +8,11 @@ import { removeToken } from "../../utils/auth";
 import { useRouter, useLocalSearchParams } from "expo-router";
 
 import { useFocusEffect } from "expo-router";
+import ProfileModal from "@/components/ProfileModal";
 
 const { width } = Dimensions.get("window");
 
-interface Profile {
+interface ProfileType {
     username: string;
     email: string;
     bio?: string;
@@ -26,10 +27,9 @@ interface Profile {
 }
 
 export default function Profile() {
-    const [profileData, setProfileData] = useState<Profile | null>(null);
+    const [profileData, setProfileData] = useState<ProfileType | null>(null);
     const [posts, setPosts] = useState<any[]>([]);
     const [menuVisible, setMenuVisible] = useState(false);
-    const router = useRouter();
 
     const currentUser = useAuthStore((state) => state.user);
 
@@ -64,11 +64,6 @@ export default function Profile() {
             fetchUserPosts();
         }, [userId])
     );
-
-    const handleLogout = async () => {
-        await removeToken();
-        router.replace("/auth/login");
-    };
 
     if (!profileData) {
         return <Text>Loading...</Text>;
@@ -129,35 +124,7 @@ export default function Profile() {
                 />
             </View>
 
-            <Modal visible={menuVisible} transparent animationType="fade">
-                <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
-                    <View style={styles.modalOverlay}>
-                        <View style={styles.modalContainer}>
-                            <TouchableOpacity style={styles.modalButton} onPress={() => setMenuVisible(false)}>
-                                <Text style={styles.modalText}>Edit Profile</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.modalButton} onPress={() => setMenuVisible(false)}>
-                                <Text style={styles.modalText}>Copy Profile Link</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.modalButton} onPress={() => setMenuVisible(false)}>
-                                <Text style={styles.modalText}>Settings</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.modalButton}
-                                onPress={() => {
-                                    setMenuVisible(false);
-                                    handleLogout();
-                                }}
-                            >
-                                <Text style={styles.modalText}>Logout</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.modalButtonLast} onPress={() => setMenuVisible(false)}>
-                                <Text style={styles.modalText}>Cancel</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </TouchableWithoutFeedback>
-            </Modal>
+            <ProfileModal menuVisible={menuVisible} setMenuVisible={setMenuVisible} />
         </ScrollView>
     );
 }
@@ -236,33 +203,5 @@ const styles = StyleSheet.create({
         height: width / 3 - 6,
         margin: 2,
         borderRadius: 5,
-    },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "rgba(0,0,0,0.9)",
-    },
-    modalContainer: {
-        backgroundColor: "#202327",
-        borderRadius: 20,
-        width: 275,
-        alignItems: "center",
-    },
-    modalButton: {
-        padding: 10,
-        width: "100%",
-        alignItems: "center",
-        borderBottomWidth: 0.5,
-        borderBottomColor: "#505050",
-    },
-    modalButtonLast: {
-        padding: 10,
-        width: "100%",
-        alignItems: "center",
-    },
-    modalText: {
-        color: "#90CAF9",
-        fontSize: 15,
     },
 });
