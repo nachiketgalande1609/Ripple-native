@@ -61,6 +61,23 @@ export default function RootLayout() {
         };
     }, []);
 
+    useEffect(() => {
+        if (!currentUser) return;
+
+        const handleUnreadCountResponse = (data: { targetUserId: string; unreadCount: number }) => {
+            const { targetUserId, unreadCount } = data;
+            if (targetUserId === currentUser.id) {
+                setUnreadNotificationsCount(unreadCount);
+            }
+        };
+
+        socket.on("unreadCountResponse", handleUnreadCountResponse);
+
+        return () => {
+            socket.off("unreadCountResponse", handleUnreadCountResponse);
+        };
+    }, [currentUser, setUnreadNotificationsCount]);
+
     if (loading) {
         return (
             <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#000000" }}>

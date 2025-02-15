@@ -288,15 +288,28 @@ export default function Messages() {
                     <FlatList
                         data={users}
                         keyExtractor={(item) => item.id.toString()}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity
-                                style={[styles.userItem, selectedUser?.id === item.id && styles.selectedUserItem]}
-                                onPress={() => selectUser(item)}
-                            >
-                                <Image source={{ uri: item.profile_picture }} style={styles.profileImage} />
-                                <Text style={styles.userText}>{item.username}</Text>
-                            </TouchableOpacity>
-                        )}
+                        renderItem={({ item }) => {
+                            // Calculate unread messages for this user
+                            const userMessages = messages[item.id] || [];
+                            const unreadCount = userMessages.filter((msg) => msg.sender_id === item.id && !msg.read).length;
+
+                            return (
+                                <TouchableOpacity
+                                    style={[styles.userItem, selectedUser?.id === item.id && styles.selectedUserItem]}
+                                    onPress={() => selectUser(item)}
+                                >
+                                    <Image source={{ uri: item.profile_picture }} style={styles.profileImage} />
+                                    <Text style={styles.userText}>{item.username}</Text>
+
+                                    {/* Show unread count only if there are unread messages */}
+                                    {unreadCount > 0 && (
+                                        <View style={styles.unreadBadge}>
+                                            <Text style={styles.unreadText}>{unreadCount}</Text>
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
+                            );
+                        }}
                     />
                 </View>
             )}
@@ -411,5 +424,20 @@ const styles = StyleSheet.create({
         height: 42,
         borderRadius: 21,
         marginRight: 8,
+    },
+    unreadBadge: {
+        backgroundColor: "#1976D2",
+        borderRadius: 12,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        marginLeft: "auto",
+        minWidth: 20,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    unreadText: {
+        color: "white",
+        fontSize: 14,
+        fontWeight: "bold",
     },
 });
