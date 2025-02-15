@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
 import useAuthStore from "@/store/authStore";
+import socket from "@/services/socket";
 
 const TOKEN_KEY = "authToken";
 
@@ -11,6 +12,10 @@ export default function RootLayout() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const currentUser = useAuthStore((state) => state.user);
+
+    if (currentUser && currentUser.id) {
+        socket.emit("registerUser", currentUser.id);
+    }
 
     useEffect(() => {
         const checkAuth = async () => {

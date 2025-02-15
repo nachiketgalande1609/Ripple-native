@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Modal, TouchableWithoutFeedback } from "react-native";
 import { removeToken } from "../utils/auth";
 import { useRouter } from "expo-router";
+import useAuthStore from "@/store/authStore";
+import socket from "@/services/socket";
 
 interface ProfileModalType {
     menuVisible: boolean;
@@ -9,8 +11,12 @@ interface ProfileModalType {
 
 export default function ProfileModal({ menuVisible, setMenuVisible }: ProfileModalType) {
     const router = useRouter();
+    const currentUser = useAuthStore((state) => state.user);
 
     const handleLogout = async () => {
+        if (currentUser) {
+            socket.disconnect();
+        }
         await removeToken();
         router.replace("/auth/login");
     };

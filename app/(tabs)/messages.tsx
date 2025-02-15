@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { DrawerLayoutAndroid } from "react-native";
@@ -7,6 +7,7 @@ import { useFocusEffect } from "expo-router";
 import { useCallback, useRef } from "react";
 import { getAllMessagesData } from "@/services/api";
 import MessagesContainer from "@/components/MessagesContainer";
+import socket from "@/services/socket";
 
 type Message = {
     message_id: number;
@@ -16,7 +17,7 @@ type Message = {
     delivered?: boolean;
     read?: boolean;
     saved?: boolean;
-    file_url?: string;
+    file_url?: string | null;
     delivered_timestamp?: string | null;
     read_timestamp?: string | null;
     file_name?: string | null;
@@ -86,14 +87,27 @@ export default function Messages() {
     const handleSendMessage = async () => {
         if (!inputMessage.trim() || !selectedUser) return;
 
+        let fileUrl = null;
+        let fileName = null;
+        let fileSize = null;
+        let imageWidth = null;
+        let imageHeight = null;
+        let reply_to = null;
+
         const tempMessageId = Date.now() + Math.floor(Math.random() * 1000);
 
         const newMessage = {
             message_id: tempMessageId,
             sender_id: currentUser.id,
             message_text: inputMessage,
+            file_url: fileUrl,
+            file_name: fileName,
+            file_size: fileSize,
+            image_width: imageWidth,
+            image_height: imageHeight,
             timestamp: new Date().toISOString(),
             saved: false,
+            reply_to: reply_to,
         };
 
         setMessages((prevMessages) => {
@@ -109,8 +123,60 @@ export default function Messages() {
 
             return newMessages;
         });
+
+        socket.emit("sendMessage", {
+            tempId: tempMessageId,
+            senderId: currentUser.id,
+            receiverId: selectedUser.id,
+            text: inputMessage,
+            fileUrl,
+            fileName,
+            fileSize,
+            imageWidth,
+            imageHeight,
+            replyTo: reply_to,
+        });
+
         setInputMessage("");
     };
+
+    useEffect(() => {
+        socket.on("receiveMessage", (data) => {
+            setMessages((prevMessages) => {
+                const newMessages = { ...prevMessages };
+                const senderId = data.senderId;
+
+                if (!newMessages[senderId]) {
+                    fetchData();
+                    newMessages[senderId] = [];
+                }
+
+                const messageExists = newMessages[senderId].some((message) => message.message_id === data.messageId);
+
+                if (!messageExists) {
+                    newMessages[senderId].push({
+                        message_id: data.messageId,
+                        sender_id: data.senderId,
+                        message_text: data.message_text,
+                        timestamp: new Date().toISOString(),
+                        saved: !!data.message_id,
+                        file_url: data?.fileUrl,
+                        file_name: data.fileName,
+                        file_size: data.fileSize,
+                        reply_to: data.replyTo,
+                        image_width: data.iamgeWidth,
+                        image_height: data.imageHeight,
+                    });
+                }
+
+                return newMessages;
+            });
+        });
+
+        return () => {
+            socket.off("receiveMessage");
+        };
+    }, [currentUser]);
 
     return (
         <DrawerLayoutAndroid

@@ -11,7 +11,7 @@ type Message = {
     delivered?: boolean;
     read?: boolean;
     saved?: boolean;
-    file_url?: string;
+    file_url?: string | null;
     delivered_timestamp?: string | null;
     read_timestamp?: string | null;
     file_name?: string | null;
