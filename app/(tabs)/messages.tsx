@@ -8,6 +8,7 @@ import { useCallback, useRef } from "react";
 import { getAllMessagesData } from "@/services/api";
 import MessagesContainer from "@/components/MessagesContainer";
 import socket from "@/services/socket";
+import useNotificationMessagesStore from "@/store/unreadNotificationAndMessagesStore";
 
 type Message = {
     message_id: number;
@@ -39,6 +40,8 @@ export default function Messages() {
     const [inputMessage, setInputMessage] = useState("");
 
     const drawerRef = useRef<DrawerLayoutAndroid>(null);
+
+    const { unreadMessagesCount, setUnreadMessagesCount } = useNotificationMessagesStore();
 
     const fetchData = async () => {
         try {
@@ -239,6 +242,9 @@ export default function Messages() {
                         );
                         return updatedMessages;
                     });
+
+                    const newUnreadCount = Math.max((unreadMessagesCount || 0) - unreadMessages.length, 0);
+                    setUnreadMessagesCount(newUnreadCount);
                 }
             }
         }

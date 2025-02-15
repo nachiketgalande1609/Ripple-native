@@ -5,6 +5,8 @@ import { useRouter } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
 import useAuthStore from "@/store/authStore";
 import socket from "@/services/socket";
+import { getNotificationsCount } from "@/services/api";
+import useNotificationMessagesStore from "@/store/unreadNotificationAndMessagesStore";
 
 const TOKEN_KEY = "authToken";
 
@@ -12,6 +14,8 @@ export default function RootLayout() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const currentUser = useAuthStore((state) => state.user);
+
+    const { setUnreadNotificationsCount, setUnreadMessagesCount } = useNotificationMessagesStore();
 
     if (currentUser && currentUser.id) {
         socket.emit("registerUser", currentUser.id);
@@ -27,6 +31,34 @@ export default function RootLayout() {
             setLoading(false);
         };
         checkAuth();
+    }, []);
+
+    useEffect(() => {
+        if (!currentUser) return;
+
+        const fetchNotificationCount = async () => {
+            try {
+                const response = await getNotificationsCount(currentUser.id);
+                if (response?.success) {
+                    setUnreadNotificationsCount(response?.data?.unread_notifications);
+                    setUnreadMessagesCount(response?.data?.unread_messages);
+                }
+            } catch (error) {
+                console.error("Error fetching notification count:", error);
+            }
+        };
+
+        fetchNotificationCount();
+    }, [currentUser]);
+
+    useEffect(() => {
+        socket.on("unreadMessagesCount", (data) => {
+            setUnreadMessagesCount(data.unreadCount);
+        });
+
+        return () => {
+            socket.off("unreadMessagesCount");
+        };
     }, []);
 
     if (loading) {
