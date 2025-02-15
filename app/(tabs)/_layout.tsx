@@ -142,18 +142,17 @@ const TabIcon = ({ name, focused, color, size, badgeCount = 0 }: TabIconProps) =
     return (
         <View
             style={{
-                backgroundColor: focused ? "#ffffff" : "transparent",
                 width: screenWidth * 0.2,
                 height: 45,
-                borderTopLeftRadius: 12,
-                borderTopRightRadius: 12,
                 justifyContent: "center",
                 alignItems: "center",
                 marginTop: 5,
                 position: "relative",
+                borderTopWidth: focused ? 2 : 0,
+                borderTopColor: "#ffffff",
             }}
         >
-            <Ionicons name={focused ? name : `${name}-outline`} size={size} color={color} />
+            <Ionicons name={focused ? name : `${name}-outline`} size={size} color="#ffffff" />
             {badgeCount > 0 && (
                 <View
                     style={{
