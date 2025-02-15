@@ -35,7 +35,7 @@ export default function RootLayout() {
     return (
         <View style={{ flex: 1, backgroundColor: "#000000" }}>
             <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(tabs)/_layout" />
+                <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="auth/login" />
                 <Stack.Screen name="auth/register" />
             </Stack>
