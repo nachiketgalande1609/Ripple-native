@@ -155,6 +155,7 @@ const styles = StyleSheet.create({
     topBar: {
         flexDirection: "row",
         alignItems: "center",
+        paddingTop: 8,
         paddingBottom: 10,
         paddingHorizontal: 10,
         marginBottom: 10,
