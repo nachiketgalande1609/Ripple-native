@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, Dimensions, Image, FlatList, TouchableOpacity, 
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import useAuthStore from "@/store/authStore";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
 import { useFocusEffect } from "expo-router";
 import ProfileModal from "@/components/ProfileModal";
@@ -71,14 +71,14 @@ export default function Profile() {
     return (
         <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: "#000000" }}>
             <View style={styles.banner}>
-                <Svg width="100%" height="300">
+                <Svg width="100%" height="320">
                     <Defs>
                         <LinearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
                             <Stop offset="100%" stopColor="hsl(214, 10%, 20%)" />
                             <Stop offset="0%" stopColor="rgb(0, 0, 0)" />
                         </LinearGradient>
                     </Defs>
-                    <Rect x="0" y="0" width="100%" height="300" fill="url(#gradient)" />
+                    <Rect x="0" y="0" width="100%" height="320" fill="url(#gradient)" />
                 </Svg>
                 <TouchableOpacity style={styles.menuIcon} onPress={() => setMenuVisible(true)}>
                     <MaterialIcons name="more-vert" size={22} color="white" />
@@ -104,6 +104,19 @@ export default function Profile() {
                             <Text style={styles.statNumber}>{profileData.following_count}</Text>
                             <Text style={styles.statLabel}>FOLLOWING</Text>
                         </View>
+                    </View>
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity
+                            style={styles.messageButton}
+                            onPress={() => router.push({ pathname: "/(tabs)/messages", params: { user: JSON.stringify(profileData) } })}
+                        >
+                            <Text style={styles.buttonText}>Message</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.followButton} onPress={() => console.log("Follow button pressed")}>
+                            <Text style={styles.buttonText}>
+                                {profileData.is_following ? "Following" : profileData.follow_status === "requested" ? "Requested" : "Follow"}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </View>
@@ -132,7 +145,7 @@ const styles = StyleSheet.create({
     banner: {
         position: "relative",
         width: "100%",
-        height: 290,
+        height: 320,
         alignItems: "center",
         justifyContent: "flex-start",
         overflow: "hidden",
@@ -202,5 +215,28 @@ const styles = StyleSheet.create({
         height: width / 3 - 6,
         margin: 2,
         borderRadius: 5,
+    },
+    buttonContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        marginTop: 15,
+        gap: 10,
+    },
+    messageButton: {
+        backgroundColor: "#444",
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 20,
+    },
+    followButton: {
+        backgroundColor: "#007BFF",
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 20,
+    },
+    buttonText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "bold",
     },
 });
