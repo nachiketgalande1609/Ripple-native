@@ -1,11 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { getProfile, getUserPosts } from "@/services/api";
-import { View, Text, StyleSheet, Dimensions, Image, FlatList, TouchableOpacity, ScrollView, Modal, TouchableWithoutFeedback } from "react-native";
+import { View, Text, StyleSheet, Dimensions, Image, FlatList, TouchableOpacity, ScrollView } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import useAuthStore from "@/store/authStore";
 import { MaterialIcons } from "@expo/vector-icons";
-import { removeToken } from "../../utils/auth";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 
 import { useFocusEffect } from "expo-router";
 import ProfileModal from "@/components/ProfileModal";

@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, Image } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons"; // For the chevron icon
+import { Ionicons } from "@expo/vector-icons";
 import { DrawerLayoutAndroid } from "react-native";
 import useAuthStore from "@/store/authStore";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useRef, useEffect } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useRef } from "react";
 import { getAllMessagesData } from "@/services/api";
+import MessagesContainer from "@/components/MessagesContainer";
 
 type Message = {
     message_id: number;
@@ -126,18 +126,7 @@ export default function Messages() {
                 {/* Messages View */}
                 <View style={styles.messagesContainer}>
                     {selectedUser ? (
-                        <FlatList
-                            data={messages[selectedUser.id] || []}
-                            keyExtractor={(item) => item.message_id.toString()}
-                            renderItem={({ item }) => {
-                                const isCurrentUser = item.sender_id === currentUser.id;
-                                return (
-                                    <View style={[styles.messageItem, isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage]}>
-                                        <Text style={styles.messageText}>{item.message_text}</Text>
-                                    </View>
-                                );
-                            }}
-                        />
+                        <MessagesContainer messages={messages} selectedUser={selectedUser} />
                     ) : (
                         <Text style={styles.noUserText}>Select a user to start chatting</Text>
                     )}
@@ -181,24 +170,7 @@ const styles = StyleSheet.create({
     messagesContainer: {
         flex: 1,
         justifyContent: "center",
-    },
-    messageItem: {
-        maxWidth: "80%",
-        padding: 15,
-        marginVertical: 5,
-        borderRadius: 10,
-    },
-    currentUserMessage: {
-        alignSelf: "flex-end",
-        backgroundColor: "#1976D2",
-    },
-    otherUserMessage: {
-        alignSelf: "flex-start",
-        backgroundColor: "#202327",
-    },
-    messageText: {
-        color: "#fff",
-        fontSize: 16,
+        paddingHorizontal: 10,
     },
     noUserText: {
         color: "#888",
