@@ -1,7 +1,7 @@
 import useAuthStore from "@/store/authStore";
-import React, { useState } from "react";
-import { View, FlatList, Text, StyleSheet, TextInput, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { View, FlatList, Text, StyleSheet, Image } from "react-native";
+import MessageInput from "./MessageInput";
 
 type Message = {
     message_id: number;
@@ -44,25 +44,35 @@ export default function MessagesContainer({ messages, selectedUser, inputMessage
                     const isCurrentUser = item.sender_id === currentUser.id;
                     return (
                         <View style={[styles.messageItem, isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage]}>
-                            <Text style={styles.messageText}>{item.message_text}</Text>
+                            {item.file_url ? (
+                                <>
+                                    <Image
+                                        source={{ uri: item.file_url }}
+                                        style={[
+                                            styles.messageImage,
+                                            {
+                                                height: 300,
+                                                width:
+                                                    item.image_width && item.image_height ? (item.image_width / item.image_height) * 300 : undefined,
+                                            },
+                                        ]}
+                                        resizeMode="contain"
+                                    />
+                                    <Text style={styles.messageText}>{item.message_text}</Text>
+                                </>
+                            ) : (
+                                <Text style={styles.messageText}>{item.message_text}</Text>
+                            )}
+                            <Text style={[styles.timestampText, { alignSelf: item.sender_id === currentUser.id ? "flex-start" : "flex-end" }]}>
+                                {new Date(item.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })}
+                            </Text>
                         </View>
                     );
                 }}
             />
 
             {/* Message Input Box */}
-            <View style={styles.inputContainer}>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Type a message..."
-                    placeholderTextColor="#888"
-                    value={inputMessage}
-                    onChangeText={setInputMessage}
-                />
-                <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
-                    <Ionicons name="send" size={20} color="#1976D2" />
-                </TouchableOpacity>
-            </View>
+            <MessageInput inputMessage={inputMessage} setInputMessage={setInputMessage} handleSendMessage={handleSendMessage} />
         </View>
     );
 }
@@ -75,6 +85,15 @@ const styles = StyleSheet.create({
         marginVertical: 5,
         borderRadius: 10,
     },
+    messageImage: {
+        borderRadius: 10,
+        marginTop: 5,
+    },
+    timestampText: {
+        fontSize: 12,
+        color: "#bbb",
+        marginTop: 4,
+    },
     currentUserMessage: {
         alignSelf: "flex-end",
         backgroundColor: "#1976D2",
@@ -85,27 +104,6 @@ const styles = StyleSheet.create({
     },
     messageText: {
         color: "#fff",
-        fontSize: 16,
-    },
-    inputContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: 10,
-        paddingHorizontal: 5,
-        borderTopWidth: 0.5,
-        borderTopColor: "#202327",
-        backgroundColor: "#000000",
-    },
-    input: {
-        flex: 1,
-        color: "white",
-        padding: 10,
-        backgroundColor: "#000000",
-        borderRadius: 20,
-        marginRight: 10,
-    },
-    sendButton: {
-        padding: 10,
-        borderRadius: 20,
+        fontSize: 14,
     },
 });
