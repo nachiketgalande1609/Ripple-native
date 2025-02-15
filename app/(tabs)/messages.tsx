@@ -85,28 +85,42 @@ export default function Messages() {
             drawerWidth={250}
             drawerPosition="left"
             renderNavigationView={() => (
-                <SafeAreaView style={styles.drawerContainer}>
-                    <Text style={styles.drawerHeading}>Select a User</Text>
+                <View style={styles.drawerContainer}>
+                    <View style={styles.drawerHeadingContainer}>
+                        <Text style={styles.drawerHeading}>Messages</Text>
+                        <TouchableOpacity onPress={closeDrawer}>
+                            <Ionicons name="chevron-back" size={20} color="white" />
+                        </TouchableOpacity>
+                    </View>
+
                     <FlatList
                         data={users}
                         keyExtractor={(item) => item.id.toString()}
                         renderItem={({ item }) => (
-                            <TouchableOpacity style={styles.userItem} onPress={() => selectUser(item)}>
+                            <TouchableOpacity
+                                style={[styles.userItem, selectedUser?.id === item.id && styles.selectedUserItem]}
+                                onPress={() => selectUser(item)}
+                            >
                                 <Image source={{ uri: item.profile_picture }} style={styles.profileImage} />
                                 <Text style={styles.userText}>{item.username}</Text>
                             </TouchableOpacity>
                         )}
                     />
-                </SafeAreaView>
+                </View>
             )}
         >
-            <SafeAreaView style={styles.container}>
+            <View style={styles.container}>
                 {/* Top Bar with Chevron */}
                 <View style={styles.topBar}>
                     <TouchableOpacity onPress={openDrawer}>
-                        <Ionicons name="chevron-forward" size={28} color="white" />
+                        <Ionicons name="chevron-forward" size={20} color="white" />
                     </TouchableOpacity>
-                    <Text style={styles.topBarTitle}>{selectedUser ? selectedUser.username : "Messages"}</Text>
+                    {selectedUser && (
+                        <View style={styles.userInfo}>
+                            <Image source={{ uri: selectedUser.profile_picture }} style={styles.topBarImage} />
+                            <Text style={styles.topBarTitle}>{selectedUser.username}</Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* Messages View */}
@@ -115,17 +129,20 @@ export default function Messages() {
                         <FlatList
                             data={messages[selectedUser.id] || []}
                             keyExtractor={(item) => item.message_id.toString()}
-                            renderItem={({ item }) => (
-                                <View style={styles.messageItem}>
-                                    <Text style={styles.messageText}>{item.message_text}</Text>
-                                </View>
-                            )}
+                            renderItem={({ item }) => {
+                                const isCurrentUser = item.sender_id === currentUser.id;
+                                return (
+                                    <View style={[styles.messageItem, isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage]}>
+                                        <Text style={styles.messageText}>{item.message_text}</Text>
+                                    </View>
+                                );
+                            }}
                         />
                     ) : (
                         <Text style={styles.noUserText}>Select a user to start chatting</Text>
                     )}
                 </View>
-            </SafeAreaView>
+            </View>
         </DrawerLayoutAndroid>
     );
 }
@@ -133,12 +150,27 @@ export default function Messages() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#000",
+        backgroundColor: "#000000",
     },
     topBar: {
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: 20,
+        paddingBottom: 10,
+        paddingHorizontal: 10,
+        marginBottom: 10,
+        borderBottomWidth: 0.5,
+        borderBottomColor: "#202327",
+    },
+    userInfo: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginLeft: 10,
+    },
+    topBarImage: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 10,
     },
     topBarTitle: {
         color: "white",
@@ -150,10 +182,18 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     messageItem: {
-        backgroundColor: "#222",
+        maxWidth: "80%",
         padding: 15,
         marginVertical: 5,
-        borderRadius: 5,
+        borderRadius: 10,
+    },
+    currentUserMessage: {
+        alignSelf: "flex-end",
+        backgroundColor: "#1976D2",
+    },
+    otherUserMessage: {
+        alignSelf: "flex-start",
+        backgroundColor: "#202327",
     },
     messageText: {
         color: "#fff",
@@ -171,8 +211,13 @@ const styles = StyleSheet.create({
     drawerHeading: {
         color: "#ffffff",
         fontSize: 20,
-        marginBottom: 10,
+    },
+    drawerHeadingContainer: {
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "space-between",
         paddingHorizontal: 10,
+        paddingVertical: 16,
     },
     userItem: {
         flexDirection: "row",
@@ -182,9 +227,13 @@ const styles = StyleSheet.create({
         backgroundColor: "#202327",
         marginVertical: 5,
     },
+    selectedUserItem: {
+        borderRightWidth: 4,
+        borderRightColor: "#1976D2",
+    },
     userText: {
         color: "#ffffff",
-        fontSize: 18,
+        fontSize: 16,
     },
     profileImage: {
         width: 42,
