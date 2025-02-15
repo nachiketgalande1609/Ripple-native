@@ -11,14 +11,14 @@ type Message = {
     delivered?: boolean;
     read?: boolean;
     saved?: boolean;
-    file_url: string;
+    file_url?: string;
     delivered_timestamp?: string | null;
     read_timestamp?: string | null;
-    file_name: string | null;
-    file_size: string | null;
-    reply_to: number | null;
-    image_height: number | null;
-    image_width: number | null;
+    file_name?: string | null;
+    file_size?: string | null;
+    reply_to?: number | null;
+    image_height?: number | null;
+    image_width?: number | null;
 };
 
 type MessagesType = Record<string, Message[]>;
@@ -27,18 +27,13 @@ type User = { id: number; username: string; profile_picture: string; isOnline: B
 interface MessageContainerProps {
     messages: MessagesType;
     selectedUser: User;
+    inputMessage: string;
+    setInputMessage: React.Dispatch<React.SetStateAction<string>>;
+    handleSendMessage: () => void;
 }
 
-export default function MessagesContainer({ messages, selectedUser }: MessageContainerProps) {
+export default function MessagesContainer({ messages, selectedUser, inputMessage, setInputMessage, handleSendMessage }: MessageContainerProps) {
     const currentUser = useAuthStore((state) => state.user);
-    const [message, setMessage] = useState("");
-
-    const sendMessage = () => {
-        if (message.trim()) {
-            console.log("Sending message:", message);
-            setMessage(""); // Clear input after sending
-        }
-    };
 
     return (
         <View style={{ flex: 1 }}>
@@ -61,10 +56,10 @@ export default function MessagesContainer({ messages, selectedUser }: MessageCon
                     style={styles.input}
                     placeholder="Type a message..."
                     placeholderTextColor="#888"
-                    value={message}
-                    onChangeText={setMessage}
+                    value={inputMessage}
+                    onChangeText={setInputMessage}
                 />
-                <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+                <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
                     <Ionicons name="send" size={20} color="#1976D2" />
                 </TouchableOpacity>
             </View>

@@ -16,14 +16,14 @@ type Message = {
     delivered?: boolean;
     read?: boolean;
     saved?: boolean;
-    file_url: string;
+    file_url?: string;
     delivered_timestamp?: string | null;
     read_timestamp?: string | null;
-    file_name: string | null;
-    file_size: string | null;
-    reply_to: number | null;
-    image_height: number | null;
-    image_width: number | null;
+    file_name?: string | null;
+    file_size?: string | null;
+    reply_to?: number | null;
+    image_height?: number | null;
+    image_width?: number | null;
 };
 
 type MessagesType = Record<string, Message[]>;
@@ -35,6 +35,7 @@ export default function Messages() {
     const [users, setUsers] = useState<User[]>([]);
     const [messages, setMessages] = useState<MessagesType>({});
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [inputMessage, setInputMessage] = useState("");
 
     const drawerRef = useRef<DrawerLayoutAndroid>(null);
 
@@ -67,7 +68,10 @@ export default function Messages() {
     );
 
     const openDrawer = () => {
-        drawerRef.current?.openDrawer();
+        drawerRef.current?.closeDrawer();
+        setTimeout(() => {
+            drawerRef.current?.openDrawer();
+        }, 100);
     };
 
     const closeDrawer = () => {
@@ -77,6 +81,35 @@ export default function Messages() {
     const selectUser = (user: User) => {
         setSelectedUser(user);
         closeDrawer();
+    };
+
+    const handleSendMessage = async () => {
+        if (!inputMessage.trim() || !selectedUser) return;
+
+        const tempMessageId = Date.now() + Math.floor(Math.random() * 1000);
+
+        const newMessage = {
+            message_id: tempMessageId,
+            sender_id: currentUser.id,
+            message_text: inputMessage,
+            timestamp: new Date().toISOString(),
+            saved: false,
+        };
+
+        setMessages((prevMessages) => {
+            const newMessages = { ...prevMessages };
+
+            if (!newMessages[selectedUser.id]) {
+                newMessages[selectedUser.id] = [];
+            }
+
+            if (!newMessages[selectedUser.id].some((msg) => msg.message_id === tempMessageId)) {
+                newMessages[selectedUser.id].push(newMessage);
+            }
+
+            return newMessages;
+        });
+        setInputMessage("");
     };
 
     return (
@@ -126,7 +159,13 @@ export default function Messages() {
                 {/* Messages View */}
                 <View style={styles.messagesContainer}>
                     {selectedUser ? (
-                        <MessagesContainer messages={messages} selectedUser={selectedUser} />
+                        <MessagesContainer
+                            messages={messages}
+                            selectedUser={selectedUser}
+                            inputMessage={inputMessage}
+                            setInputMessage={setInputMessage}
+                            handleSendMessage={handleSendMessage}
+                        />
                     ) : (
                         <Text style={styles.noUserText}>Select a user to start chatting</Text>
                     )}
