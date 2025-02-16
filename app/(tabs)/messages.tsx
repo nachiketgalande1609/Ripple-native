@@ -289,8 +289,8 @@ export default function Messages() {
                         data={users}
                         keyExtractor={(item) => item.id.toString()}
                         renderItem={({ item }) => {
-                            // Calculate unread messages for this user
                             const userMessages = messages[item.id] || [];
+                            const latestMessage = userMessages.length > 0 ? userMessages[userMessages.length - 1].message_text : "No messages yet";
                             const unreadCount = userMessages.filter((msg) => msg.sender_id === item.id && !msg.read).length;
 
                             return (
@@ -299,7 +299,12 @@ export default function Messages() {
                                     onPress={() => selectUser(item)}
                                 >
                                     <Image source={{ uri: item.profile_picture }} style={styles.profileImage} />
-                                    <Text style={styles.userText}>{item.username}</Text>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.userText}>{item.username}</Text>
+                                        <Text style={styles.latestMessage} numberOfLines={1}>
+                                            {latestMessage}
+                                        </Text>
+                                    </View>
 
                                     {/* Show unread count only if there are unread messages */}
                                     {unreadCount > 0 && (
@@ -419,6 +424,12 @@ const styles = StyleSheet.create({
         color: "#ffffff",
         fontSize: 16,
     },
+    latestMessage: {
+        color: "#aaa",
+        fontSize: 14,
+        marginTop: 1,
+    },
+
     profileImage: {
         width: 42,
         height: 42,
