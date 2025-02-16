@@ -109,6 +109,12 @@ export default function MessagesContainer({
         return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
     };
 
+    const getStatusIcon = (item: Message) => {
+        if (item.read) return <MaterialCommunityIcons name="check-all" size={16} color="#2196F3" />;
+        if (item.delivered) return <MaterialCommunityIcons name="check-all" size={16} color="#bbb" />;
+        return <MaterialCommunityIcons name="check" size={16} color="#bbb" />;
+    };
+
     return (
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -152,6 +158,7 @@ export default function MessagesContainer({
                                                 <Text style={styles.messageText}>{item.message_text}</Text>
                                             )}
 
+                                            {/* Timestamp inside message bubble */}
                                             <Text style={styles.timestampText}>
                                                 {new Date(item.timestamp).toLocaleTimeString([], {
                                                     hour: "2-digit",
@@ -160,6 +167,9 @@ export default function MessagesContainer({
                                                 })}
                                             </Text>
                                         </View>
+
+                                        {/* Status icon for current user messages */}
+                                        {isCurrentUser && <Text style={styles.statusIcon}>{getStatusIcon(item)}</Text>}
                                     </View>
                                 </TouchableWithoutFeedback>
                             );
@@ -256,7 +266,7 @@ export default function MessagesContainer({
 const styles = StyleSheet.create({
     messageWrapper: {
         flexDirection: "row",
-        alignItems: "center",
+        alignItems: "baseline",
         marginVertical: 10,
         maxWidth: "80%",
     },
@@ -356,5 +366,10 @@ const styles = StyleSheet.create({
     fileSize: {
         color: "#bbb",
         fontSize: 12,
+    },
+    statusIcon: {
+        fontSize: 12,
+        color: "#bbb",
+        marginLeft: 5,
     },
 });
