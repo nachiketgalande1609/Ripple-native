@@ -1,8 +1,20 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import useAuthStore from "@/store/authStore";
-import { View, FlatList, Text, StyleSheet, Image, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, Keyboard } from "react-native";
+import {
+    View,
+    FlatList,
+    Text,
+    StyleSheet,
+    Image,
+    TouchableWithoutFeedback,
+    KeyboardAvoidingView,
+    Platform,
+    Keyboard,
+    TouchableOpacity,
+} from "react-native";
 import MessageInput from "./MessageInput";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import Modal from "react-native-modal";
 
 type Message = {
     message_id: number;
@@ -11,19 +23,13 @@ type Message = {
     timestamp: string;
     delivered?: boolean;
     read?: boolean;
-    saved?: boolean;
-    file_url?: string | null;
     delivered_timestamp?: string | null;
     read_timestamp?: string | null;
-    file_name?: string | null;
-    file_size?: string | null;
-    reply_to?: number | null;
-    image_height?: number | null;
-    image_width?: number | null;
+    file_url?: string | null;
 };
 
 type MessagesType = Record<string, Message[]>;
-type User = { id: number; username: string; profile_picture: string; isOnline: Boolean };
+type User = { id: number; username: string; profile_picture: string; isOnline: boolean };
 
 interface MessageContainerProps {
     messages: MessagesType;
@@ -36,6 +42,8 @@ interface MessageContainerProps {
 export default function MessagesContainer({ messages, selectedUser, inputMessage, setInputMessage, handleSendMessage }: MessageContainerProps) {
     const currentUser = useAuthStore((state) => state.user);
     const flatListRef = useRef<FlatList>(null);
+    const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+    const [isDrawerOpen, setDrawerOpen] = useState(false);
 
     useEffect(() => {
         if (flatListRef.current && messages[selectedUser.id]?.length) {
@@ -52,13 +60,12 @@ export default function MessagesContainer({ messages, selectedUser, inputMessage
             }, 10);
         });
 
-        return () => keyboardListener.remove(); // Cleanup listener
+        return () => keyboardListener.remove();
     }, []);
 
-    const getStatusIcon = (item: Message) => {
-        if (item.read) return <MaterialCommunityIcons name="check-all" size={16} color="#2196F3" />;
-        if (item.delivered) return <MaterialCommunityIcons name="check-all" size={16} color="#bbb" />;
-        return <MaterialCommunityIcons name="check" size={16} color="#bbb" />;
+    const handleLongPress = (message: Message) => {
+        setSelectedMessage(message);
+        setDrawerOpen(true);
     };
 
     return (
@@ -72,44 +79,61 @@ export default function MessagesContainer({ messages, selectedUser, inputMessage
                         renderItem={({ item }) => {
                             const isCurrentUser = item.sender_id === currentUser.id;
                             return (
-                                <View style={[styles.messageWrapper, isCurrentUser && styles.currentUserWrapper]}>
-                                    <View style={[styles.messageItem, isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage]}>
-                                        {item.file_url ? (
-                                            <>
-                                                <Image
-                                                    source={{ uri: item.file_url }}
-                                                    style={[
-                                                        styles.messageImage,
-                                                        {
-                                                            height: 300,
-                                                            width:
-                                                                item.image_width && item.image_height
-                                                                    ? (item.image_width / item.image_height) * 300
-                                                                    : undefined,
-                                                        },
-                                                    ]}
-                                                    resizeMode="contain"
-                                                />
+                                <TouchableWithoutFeedback onLongPress={() => handleLongPress(item)}>
+                                    <View style={[styles.messageWrapper, isCurrentUser && styles.currentUserWrapper]}>
+                                        <View style={[styles.messageItem, isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage]}>
+                                            {item.file_url ? (
+                                                <>
+                                                    <Image source={{ uri: item.file_url }} style={styles.messageImage} resizeMode="contain" />
+                                                    <Text style={styles.messageText}>{item.message_text}</Text>
+                                                </>
+                                            ) : (
                                                 <Text style={styles.messageText}>{item.message_text}</Text>
-                                            </>
-                                        ) : (
-                                            <Text style={styles.messageText}>{item.message_text}</Text>
-                                        )}
-                                        <Text style={styles.timestampText}>
-                                            {new Date(item.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })}
-                                        </Text>
+                                            )}
+                                            <Text style={styles.timestampText}>
+                                                {new Date(item.timestamp).toLocaleTimeString([], {
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                    hour12: true,
+                                                })}
+                                            </Text>
+                                        </View>
                                     </View>
-                                    {isCurrentUser && <Text style={styles.statusIcon}>{getStatusIcon(item)}</Text>}
-                                </View>
+                                </TouchableWithoutFeedback>
                             );
-                        }}
-                        onContentSizeChange={() => {
-                            if (flatListRef.current) {
-                                flatListRef.current.scrollToOffset({ offset: 99999, animated: false });
-                            }
                         }}
                     />
                     <MessageInput inputMessage={inputMessage} setInputMessage={setInputMessage} handleSendMessage={handleSendMessage} />
+
+                    {/* Message Details Drawer */}
+                    <Modal
+                        isVisible={isDrawerOpen}
+                        onBackdropPress={() => setDrawerOpen(false)}
+                        animationIn="slideInRight"
+                        animationOut="slideOutRight"
+                        backdropOpacity={0.3}
+                        style={styles.drawerModal}
+                    >
+                        <View style={styles.drawerContainer}>
+                            <TouchableOpacity onPress={() => setDrawerOpen(false)} style={styles.closeButton}>
+                                <MaterialCommunityIcons name="close" size={20} color="#fff" />
+                            </TouchableOpacity>
+                            <Text style={styles.drawerTitle}>Message Details</Text>
+                            {selectedMessage && (
+                                <>
+                                    <Text style={styles.drawerText}>Sent: {new Date(selectedMessage.timestamp).toLocaleString()}</Text>
+                                    {selectedMessage.delivered_timestamp && (
+                                        <Text style={styles.drawerText}>
+                                            Delivered: {new Date(selectedMessage.delivered_timestamp).toLocaleString()}
+                                        </Text>
+                                    )}
+                                    {selectedMessage.read_timestamp && (
+                                        <Text style={styles.drawerText}>Read: {new Date(selectedMessage.read_timestamp).toLocaleString()}</Text>
+                                    )}
+                                </>
+                            )}
+                        </View>
+                    </Modal>
                 </View>
             </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
@@ -125,7 +149,6 @@ const styles = StyleSheet.create({
     },
     currentUserWrapper: {
         alignSelf: "flex-end",
-        flexDirection: "row",
     },
     messageItem: {
         paddingVertical: 8,
@@ -134,21 +157,14 @@ const styles = StyleSheet.create({
     },
     messageImage: {
         borderRadius: 10,
-        marginTop: 5,
+        height: 300,
+        width: "100%",
     },
     timestampText: {
         fontSize: 12,
         color: "#bbb",
         marginTop: 4,
         alignSelf: "flex-end",
-    },
-    statusIcon: {
-        fontSize: 12,
-        color: "#bbb",
-        marginLeft: 5, // Push read receipt outside the message bubble
-    },
-    readColor: {
-        color: "#2196F3", // Blue for read messages
     },
     currentUserMessage: {
         backgroundColor: "#1976D2",
@@ -159,5 +175,32 @@ const styles = StyleSheet.create({
     messageText: {
         color: "#fff",
         fontSize: 14,
+    },
+    drawerModal: {
+        margin: 0,
+        justifyContent: "flex-end",
+        alignItems: "flex-end",
+    },
+    drawerContainer: {
+        width: "65%",
+        backgroundColor: "#222",
+        height: "100%",
+        padding: 20,
+        borderTopLeftRadius: 10,
+        borderBottomLeftRadius: 10,
+    },
+    drawerTitle: {
+        fontSize: 18,
+        fontWeight: "bold",
+        color: "#fff",
+        marginBottom: 10,
+    },
+    drawerText: {
+        color: "#bbb",
+        fontSize: 14,
+        marginBottom: 5,
+    },
+    closeButton: {
+        alignSelf: "flex-end",
     },
 });
