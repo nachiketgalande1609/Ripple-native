@@ -11,11 +11,14 @@ import {
     Keyboard,
     TouchableOpacity,
     Image,
+    Linking,
 } from "react-native";
 import MessageInput from "./MessageInput";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import Modal from "react-native-modal";
 import * as DocumentPicker from "expo-document-picker";
+import { Audio } from "expo-av";
+import { Video } from "expo-av";
 
 type Message = {
     message_id: number;
@@ -87,6 +90,25 @@ export default function MessagesContainer({
         setDrawerOpen(true);
     };
 
+    const playAudio = async (url: string) => {
+        const { sound } = await Audio.Sound.createAsync({ uri: url });
+        await sound.playAsync();
+    };
+
+    const openDocument = async (url: string) => {
+        Linking.openURL(url);
+    };
+
+    const formatFileSize = (sizeInBytes: number | null) => {
+        if (!sizeInBytes) return "Unknown size";
+
+        const size = Number(sizeInBytes); // Ensure it's a number
+        if (size < 1024) return `${size} B`;
+        if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
+        if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+        return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+    };
+
     return (
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -102,12 +124,34 @@ export default function MessagesContainer({
                                 <TouchableWithoutFeedback onLongPress={() => handleLongPress(item)}>
                                     <View style={[styles.messageWrapper, isCurrentUser && styles.currentUserWrapper]}>
                                         <View style={[styles.messageItem, isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage]}>
-                                            {/* Check if message has an image */}
                                             {item.file_url ? (
-                                                <Image source={{ uri: item.file_url }} style={styles.imageStyle} />
+                                                item.file_url.match(/\.(jpeg|jpg|png|gif)$/i) ? (
+                                                    <Image source={{ uri: item.file_url }} style={styles.imageStyle} />
+                                                ) : item.file_url.match(/\.(mp4|mov|avi)$/i) ? (
+                                                    <Video source={{ uri: item.file_url }} style={styles.videoStyle} useNativeControls />
+                                                ) : item.file_url.match(/\.(mp3|wav|ogg)$/i) ? (
+                                                    <TouchableOpacity onPress={() => playAudio(item.file_url)}>
+                                                        <MaterialCommunityIcons name="play-circle-outline" size={40} color="white" />
+                                                    </TouchableOpacity>
+                                                ) : (
+                                                    <TouchableOpacity onPress={() => openDocument(item.file_url)} style={styles.fileContainer}>
+                                                        <MaterialCommunityIcons
+                                                            name={item.file_url.match(/\.(pdf)$/i) ? "file-pdf-box" : "file"}
+                                                            size={40}
+                                                            color={item.file_url.match(/\.(pdf)$/i) ? "red" : "#FFD013"}
+                                                        />
+                                                        <View style={styles.fileInfo}>
+                                                            <Text numberOfLines={1} style={styles.fileName}>
+                                                                {item.file_name || "Download File"}
+                                                            </Text>
+                                                            <Text style={styles.fileSize}>{formatFileSize(parseInt(item.file_size ?? "0", 10))}</Text>
+                                                        </View>
+                                                    </TouchableOpacity>
+                                                )
                                             ) : (
                                                 <Text style={styles.messageText}>{item.message_text}</Text>
                                             )}
+
                                             <Text style={styles.timestampText}>
                                                 {new Date(item.timestamp).toLocaleTimeString([], {
                                                     hour: "2-digit",
@@ -287,5 +331,30 @@ const styles = StyleSheet.create({
         height: 200,
         borderRadius: 10,
         marginVertical: 5,
+    },
+    videoStyle: {
+        width: 250,
+        height: 150,
+        borderRadius: 10,
+    },
+    fileName: {
+        color: "#fff",
+        fontSize: 14,
+        fontWeight: "bold",
+    },
+    fileContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#202327",
+        borderRadius: 10,
+        width: 200,
+    },
+    fileInfo: {
+        marginLeft: 2,
+        flexShrink: 1,
+    },
+    fileSize: {
+        color: "#bbb",
+        fontSize: 12,
     },
 });
