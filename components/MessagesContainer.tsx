@@ -66,6 +66,7 @@ export default function MessagesContainer({
     const flatListRef = useRef<FlatList>(null);
     const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
     const [isDrawerOpen, setDrawerOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
     useEffect(() => {
         if (flatListRef.current) {
@@ -132,8 +133,18 @@ export default function MessagesContainer({
                                         {/* Render file separately if it exists */}
                                         {item.file_url ? (
                                             <>
-                                                {item.file_url.match(/\.(jpeg|jpg|png|gif)$/i) ? (
-                                                    <Image source={{ uri: item.file_url }} style={styles.imageStyle} />
+                                                {item.file_url.match(/\.(jpeg|jpg|png|gif)$/i) && item.image_width && item.image_height ? (
+                                                    <TouchableOpacity onPress={() => setSelectedImage(item.file_url)}>
+                                                        <Image
+                                                            source={{ uri: item.file_url }}
+                                                            style={{
+                                                                height: 200,
+                                                                width: 200,
+                                                                borderRadius: 10,
+                                                                marginVertical: 5,
+                                                            }}
+                                                        />
+                                                    </TouchableOpacity>
                                                 ) : item.file_url.match(/\.(mp4|mov|avi)$/i) ? (
                                                     <Video source={{ uri: item.file_url }} style={styles.videoStyle} useNativeControls />
                                                 ) : item.file_url.match(/\.(mp3|wav|ogg)$/i) ? (
@@ -262,6 +273,22 @@ export default function MessagesContainer({
                             )}
                         </View>
                     </Modal>
+
+                    <Modal
+                        isVisible={!!selectedImage}
+                        onBackdropPress={() => setSelectedImage(null)}
+                        animationIn="fadeIn"
+                        animationOut="fadeOut"
+                        backdropOpacity={0.8}
+                        style={styles.imageModal}
+                    >
+                        <View style={styles.imageModalContainer}>
+                            <TouchableOpacity onPress={() => setSelectedImage(null)} style={styles.closeButton}>
+                                <MaterialCommunityIcons name="close" size={30} color="#fff" />
+                            </TouchableOpacity>
+                            <Image source={{ uri: selectedImage! }} style={styles.fullImage} resizeMode="contain" />
+                        </View>
+                    </Modal>
                 </View>
             </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
@@ -377,5 +404,27 @@ const styles = StyleSheet.create({
         alignSelf: "flex-end",
         marginLeft: 5,
         marginBottom: 5,
+    },
+    imageModal: {
+        justifyContent: "center",
+        alignItems: "center",
+        margin: 0,
+    },
+    imageModalContainer: {
+        backgroundColor: "black",
+        width: "100%",
+        height: "100%",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    closeButton: {
+        position: "absolute",
+        top: 40,
+        right: 20,
+        zIndex: 10,
+    },
+    fullImage: {
+        width: "90%",
+        height: "80%",
     },
 });
