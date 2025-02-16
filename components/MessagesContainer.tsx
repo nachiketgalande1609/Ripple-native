@@ -68,17 +68,17 @@ export default function MessagesContainer({
     const [isDrawerOpen, setDrawerOpen] = useState(false);
 
     useEffect(() => {
-        if (flatListRef.current && messages[selectedUser.id]?.length) {
+        if (flatListRef.current) {
             setTimeout(() => {
-                flatListRef.current?.scrollToOffset({ offset: 99999, animated: false });
-            }, 0);
+                flatListRef.current?.scrollToEnd({ animated: true });
+            }, 100);
         }
     }, [selectedUser, messages[selectedUser.id]]);
 
     useEffect(() => {
         const keyboardListener = Keyboard.addListener("keyboardDidShow", () => {
             setTimeout(() => {
-                flatListRef.current?.scrollToOffset({ offset: 99999, animated: false });
+                flatListRef.current?.scrollToEnd({ animated: true });
             }, 10);
         });
 
@@ -129,9 +129,10 @@ export default function MessagesContainer({
                             return (
                                 <TouchableWithoutFeedback onLongPress={() => handleLongPress(item)}>
                                     <View style={[styles.messageWrapper, isCurrentUser && styles.currentUserWrapper]}>
-                                        <View style={[styles.messageItem, isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage]}>
-                                            {item.file_url ? (
-                                                item.file_url.match(/\.(jpeg|jpg|png|gif)$/i) ? (
+                                        {/* Render file separately if it exists */}
+                                        {item.file_url ? (
+                                            <>
+                                                {item.file_url.match(/\.(jpeg|jpg|png|gif)$/i) ? (
                                                     <Image source={{ uri: item.file_url }} style={styles.imageStyle} />
                                                 ) : item.file_url.match(/\.(mp4|mov|avi)$/i) ? (
                                                     <Video source={{ uri: item.file_url }} style={styles.videoStyle} useNativeControls />
@@ -153,23 +154,27 @@ export default function MessagesContainer({
                                                             <Text style={styles.fileSize}>{formatFileSize(parseInt(item.file_size ?? "0", 10))}</Text>
                                                         </View>
                                                     </TouchableOpacity>
-                                                )
-                                            ) : (
+                                                )}
+
+                                                {/* Show read receipts for files */}
+                                                {isCurrentUser && <View style={styles.statusIconContainer}>{getStatusIcon(item)}</View>}
+                                            </>
+                                        ) : (
+                                            // Only wrap text messages in the colored bubble
+                                            <View style={[styles.messageItem, isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage]}>
                                                 <Text style={styles.messageText}>{item.message_text}</Text>
-                                            )}
+                                                <Text style={styles.timestampText}>
+                                                    {new Date(item.timestamp).toLocaleTimeString([], {
+                                                        hour: "2-digit",
+                                                        minute: "2-digit",
+                                                        hour12: true,
+                                                    })}
+                                                </Text>
+                                            </View>
+                                        )}
 
-                                            {/* Timestamp inside message bubble */}
-                                            <Text style={styles.timestampText}>
-                                                {new Date(item.timestamp).toLocaleTimeString([], {
-                                                    hour: "2-digit",
-                                                    minute: "2-digit",
-                                                    hour12: true,
-                                                })}
-                                            </Text>
-                                        </View>
-
-                                        {/* Status icon for current user messages */}
-                                        {isCurrentUser && <Text style={styles.statusIcon}>{getStatusIcon(item)}</Text>}
+                                        {/* Status icon for the current user's text messages */}
+                                        {isCurrentUser && item.message_text && <View style={styles.statusIconContainer}>{getStatusIcon(item)}</View>}
                                     </View>
                                 </TouchableWithoutFeedback>
                             );
@@ -357,6 +362,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         backgroundColor: "#202327",
         borderRadius: 10,
+        padding: 5,
         width: 200,
     },
     fileInfo: {
@@ -367,9 +373,9 @@ const styles = StyleSheet.create({
         color: "#bbb",
         fontSize: 12,
     },
-    statusIcon: {
-        fontSize: 12,
-        color: "#bbb",
+    statusIconContainer: {
+        alignSelf: "flex-end",
         marginLeft: 5,
+        marginBottom: 5,
     },
 });
