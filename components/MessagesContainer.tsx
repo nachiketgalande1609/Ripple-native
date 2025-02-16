@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import useAuthStore from "@/store/authStore";
-import { View, FlatList, Text, StyleSheet, Image } from "react-native";
+import { View, FlatList, Text, StyleSheet, Image, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, Keyboard } from "react-native";
 import MessageInput from "./MessageInput";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
@@ -38,10 +38,22 @@ export default function MessagesContainer({ messages, selectedUser, inputMessage
     const flatListRef = useRef<FlatList>(null);
 
     useEffect(() => {
-        if (flatListRef.current) {
-            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+        if (flatListRef.current && messages[selectedUser.id]?.length) {
+            setTimeout(() => {
+                flatListRef.current?.scrollToOffset({ offset: 99999, animated: false });
+            }, 0);
         }
     }, [selectedUser, messages[selectedUser.id]]);
+
+    useEffect(() => {
+        const keyboardListener = Keyboard.addListener("keyboardDidShow", () => {
+            setTimeout(() => {
+                flatListRef.current?.scrollToOffset({ offset: 99999, animated: false });
+            }, 10);
+        });
+
+        return () => keyboardListener.remove(); // Cleanup listener
+    }, []);
 
     const getStatusIcon = (item: Message) => {
         if (item.read) return <MaterialCommunityIcons name="check-all" size={16} color="#2196F3" />;
@@ -50,54 +62,57 @@ export default function MessagesContainer({ messages, selectedUser, inputMessage
     };
 
     return (
-        <View style={{ flex: 1 }}>
-            <FlatList
-                ref={flatListRef}
-                data={messages[selectedUser.id] || []}
-                keyExtractor={(item) => item.message_id.toString()}
-                renderItem={({ item }) => {
-                    const isCurrentUser = item.sender_id === currentUser.id;
-
-                    return (
-                        <View style={[styles.messageWrapper, isCurrentUser && styles.currentUserWrapper]}>
-                            {/* Message Bubble */}
-                            <View style={[styles.messageItem, isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage]}>
-                                {item.file_url ? (
-                                    <>
-                                        <Image
-                                            source={{ uri: item.file_url }}
-                                            style={[
-                                                styles.messageImage,
-                                                {
-                                                    height: 300,
-                                                    width:
-                                                        item.image_width && item.image_height
-                                                            ? (item.image_width / item.image_height) * 300
-                                                            : undefined,
-                                                },
-                                            ]}
-                                            resizeMode="contain"
-                                        />
-                                        <Text style={styles.messageText}>{item.message_text}</Text>
-                                    </>
-                                ) : (
-                                    <Text style={styles.messageText}>{item.message_text}</Text>
-                                )}
-
-                                {/* Timestamp inside message bubble */}
-                                <Text style={[styles.timestampText, { alignSelf: item.sender_id === currentUser.id ? "flex-start" : "flex-end" }]}>
-                                    {new Date(item.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })}
-                                </Text>
-                            </View>
-                            {isCurrentUser && <Text style={styles.statusIcon}>{getStatusIcon(item)}</Text>}
-                        </View>
-                    );
-                }}
-            />
-
-            {/* Message Input Box */}
-            <MessageInput inputMessage={inputMessage} setInputMessage={setInputMessage} handleSendMessage={handleSendMessage} />
-        </View>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={{ flex: 1 }}>
+                    <FlatList
+                        ref={flatListRef}
+                        data={messages[selectedUser.id] || []}
+                        keyExtractor={(item) => item.message_id.toString()}
+                        renderItem={({ item }) => {
+                            const isCurrentUser = item.sender_id === currentUser.id;
+                            return (
+                                <View style={[styles.messageWrapper, isCurrentUser && styles.currentUserWrapper]}>
+                                    <View style={[styles.messageItem, isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage]}>
+                                        {item.file_url ? (
+                                            <>
+                                                <Image
+                                                    source={{ uri: item.file_url }}
+                                                    style={[
+                                                        styles.messageImage,
+                                                        {
+                                                            height: 300,
+                                                            width:
+                                                                item.image_width && item.image_height
+                                                                    ? (item.image_width / item.image_height) * 300
+                                                                    : undefined,
+                                                        },
+                                                    ]}
+                                                    resizeMode="contain"
+                                                />
+                                                <Text style={styles.messageText}>{item.message_text}</Text>
+                                            </>
+                                        ) : (
+                                            <Text style={styles.messageText}>{item.message_text}</Text>
+                                        )}
+                                        <Text style={styles.timestampText}>
+                                            {new Date(item.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })}
+                                        </Text>
+                                    </View>
+                                    {isCurrentUser && <Text style={styles.statusIcon}>{getStatusIcon(item)}</Text>}
+                                </View>
+                            );
+                        }}
+                        onContentSizeChange={() => {
+                            if (flatListRef.current) {
+                                flatListRef.current.scrollToOffset({ offset: 99999, animated: false });
+                            }
+                        }}
+                    />
+                    <MessageInput inputMessage={inputMessage} setInputMessage={setInputMessage} handleSendMessage={handleSendMessage} />
+                </View>
+            </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
     );
 }
 
