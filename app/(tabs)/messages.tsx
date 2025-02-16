@@ -5,10 +5,11 @@ import { DrawerLayoutAndroid } from "react-native";
 import useAuthStore from "@/store/authStore";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useRef } from "react";
-import { getAllMessagesData } from "@/services/api";
+import { getAllMessagesData, shareChatMedia } from "@/services/api";
 import MessagesContainer from "@/components/MessagesContainer";
 import socket from "@/services/socket";
 import useNotificationMessagesStore from "@/store/unreadNotificationAndMessagesStore";
+import * as DocumentPicker from "expo-document-picker";
 
 type Message = {
     message_id: number;
@@ -18,18 +19,18 @@ type Message = {
     delivered?: boolean;
     read?: boolean;
     saved?: boolean;
-    file_url?: string | null;
+    file_url: string;
     delivered_timestamp?: string | null;
     read_timestamp?: string | null;
-    file_name?: string | null;
-    file_size?: string | null;
-    reply_to?: number | null;
-    image_height?: number | null;
-    image_width?: number | null;
+    file_name: string | null;
+    file_size: string | null;
+    reply_to: number | null;
+    image_height: number | null;
+    image_width: number | null;
 };
 
 type MessagesType = Record<string, Message[]>;
-type User = { id: number; username: string; profile_picture: string; isOnline: Boolean };
+type User = { id: number; username: string; profile_picture: string; isOnline: boolean };
 
 export default function Messages() {
     const currentUser = useAuthStore((state) => state.user);
@@ -38,8 +39,10 @@ export default function Messages() {
     const [messages, setMessages] = useState<MessagesType>({});
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [inputMessage, setInputMessage] = useState("");
+    const [isSendingMessage, setIsSendingMessage] = useState(false);
 
     const drawerRef = useRef<DrawerLayoutAndroid>(null);
+    const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerResult | null>(null);
 
     const { unreadMessagesCount, setUnreadMessagesCount } = useNotificationMessagesStore();
 
@@ -49,14 +52,17 @@ export default function Messages() {
             const users = res.data.users;
             let messages = res.data.messages;
 
-            const updatedMessages = Object.keys(messages).reduce((acc, userId) => {
-                acc[userId] = messages[userId].map((msg: MessagesType) => ({
-                    ...msg,
-                    saved: !!msg.message_id,
-                    delivered: msg.delivered,
-                }));
-                return acc;
-            }, {} as Record<string, any[]>);
+            const updatedMessages = Object.keys(messages).reduce(
+                (acc, userId) => {
+                    acc[userId] = messages[userId].map((msg: MessagesType) => ({
+                        ...msg,
+                        saved: !!msg.message_id,
+                        delivered: msg.delivered,
+                    }));
+                    return acc;
+                },
+                {} as Record<string, any[]>
+            );
 
             setUsers(users);
             setMessages(updatedMessages);
@@ -88,7 +94,7 @@ export default function Messages() {
     };
 
     const handleSendMessage = async () => {
-        if (!inputMessage.trim() || !selectedUser) return;
+        if ((!inputMessage.trim() && !selectedFile) || !selectedUser) return;
 
         let fileUrl = null;
         let fileName = null;
@@ -96,6 +102,36 @@ export default function Messages() {
         let imageWidth = null;
         let imageHeight = null;
         let reply_to = null;
+
+        if (selectedFile) {
+            const formData = new FormData();
+
+            // Convert the selected file into a format that FormData can accept
+            if (selectedFile.assets?.[0]) {
+                const { uri, mimeType, name, size } = selectedFile.assets[0];
+
+                formData.append("image", {
+                    uri,
+                    name: name || "uploaded_file",
+                    type: mimeType || "application/octet-stream",
+                } as any);
+            }
+
+            try {
+                setIsSendingMessage(true);
+                const response = await shareChatMedia(formData);
+                fileUrl = response?.data?.fileUrl;
+                fileName = response?.data?.fileName;
+                fileSize = response?.data?.fileSize;
+                imageWidth = response?.data?.imageWidth;
+                imageHeight = response?.data?.imageHeight;
+            } catch (error) {
+                console.error("Image upload failed:", error);
+                return;
+            } finally {
+                setIsSendingMessage(false);
+            }
+        }
 
         const tempMessageId = Date.now() + Math.floor(Math.random() * 1000);
 
@@ -342,6 +378,9 @@ export default function Messages() {
                             inputMessage={inputMessage}
                             setInputMessage={setInputMessage}
                             handleSendMessage={handleSendMessage}
+                            selectedFile={selectedFile}
+                            setSelectedFile={setSelectedFile}
+                            isSendingMessage={isSendingMessage}
                         />
                     ) : (
                         <Text style={styles.noUserText}>Select a user to start chatting</Text>

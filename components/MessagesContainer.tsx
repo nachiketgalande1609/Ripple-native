@@ -1,17 +1,38 @@
 import React, { useEffect, useRef, useState } from "react";
 import useAuthStore from "@/store/authStore";
-import { View, FlatList, Text, StyleSheet, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, Keyboard, TouchableOpacity } from "react-native";
+import {
+    View,
+    FlatList,
+    Text,
+    StyleSheet,
+    TouchableWithoutFeedback,
+    KeyboardAvoidingView,
+    Platform,
+    Keyboard,
+    TouchableOpacity,
+    Image,
+} from "react-native";
 import MessageInput from "./MessageInput";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import Modal from "react-native-modal";
+import * as DocumentPicker from "expo-document-picker";
 
 type Message = {
     message_id: number;
     sender_id: number;
     message_text: string;
     timestamp: string;
+    delivered?: boolean;
+    read?: boolean;
+    saved?: boolean;
+    file_url: string;
     delivered_timestamp?: string | null;
     read_timestamp?: string | null;
+    file_name: string | null;
+    file_size: string | null;
+    reply_to: number | null;
+    image_height: number | null;
+    image_width: number | null;
 };
 
 type MessagesType = Record<string, Message[]>;
@@ -23,9 +44,21 @@ interface MessageContainerProps {
     inputMessage: string;
     setInputMessage: React.Dispatch<React.SetStateAction<string>>;
     handleSendMessage: () => void;
+    selectedFile: DocumentPicker.DocumentPickerResult | null;
+    setSelectedFile: React.Dispatch<React.SetStateAction<DocumentPicker.DocumentPickerResult | null>>;
+    isSendingMessage: boolean;
 }
 
-export default function MessagesContainer({ messages, selectedUser, inputMessage, setInputMessage, handleSendMessage }: MessageContainerProps) {
+export default function MessagesContainer({
+    messages,
+    selectedUser,
+    inputMessage,
+    setInputMessage,
+    handleSendMessage,
+    selectedFile,
+    setSelectedFile,
+    isSendingMessage,
+}: MessageContainerProps) {
     const currentUser = useAuthStore((state) => state.user);
     const flatListRef = useRef<FlatList>(null);
     const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
@@ -64,11 +97,17 @@ export default function MessagesContainer({ messages, selectedUser, inputMessage
                         keyExtractor={(item) => item.message_id.toString()}
                         renderItem={({ item }) => {
                             const isCurrentUser = item.sender_id === currentUser.id;
+
                             return (
                                 <TouchableWithoutFeedback onLongPress={() => handleLongPress(item)}>
                                     <View style={[styles.messageWrapper, isCurrentUser && styles.currentUserWrapper]}>
                                         <View style={[styles.messageItem, isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage]}>
-                                            <Text style={styles.messageText}>{item.message_text}</Text>
+                                            {/* Check if message has an image */}
+                                            {item.file_url ? (
+                                                <Image source={{ uri: item.file_url }} style={styles.imageStyle} />
+                                            ) : (
+                                                <Text style={styles.messageText}>{item.message_text}</Text>
+                                            )}
                                             <Text style={styles.timestampText}>
                                                 {new Date(item.timestamp).toLocaleTimeString([], {
                                                     hour: "2-digit",
@@ -82,7 +121,14 @@ export default function MessagesContainer({ messages, selectedUser, inputMessage
                             );
                         }}
                     />
-                    <MessageInput inputMessage={inputMessage} setInputMessage={setInputMessage} handleSendMessage={handleSendMessage} />
+                    <MessageInput
+                        inputMessage={inputMessage}
+                        setInputMessage={setInputMessage}
+                        handleSendMessage={handleSendMessage}
+                        selectedFile={selectedFile}
+                        setSelectedFile={setSelectedFile}
+                        isSendingMessage={isSendingMessage}
+                    />
 
                     {/* Message Details Drawer */}
                     <Modal
@@ -235,5 +281,11 @@ const styles = StyleSheet.create({
         alignItems: "center",
         flexDirection: "row",
         paddingVertical: 12,
+    },
+    imageStyle: {
+        width: 200,
+        height: 200,
+        borderRadius: 10,
+        marginVertical: 5,
     },
 });
