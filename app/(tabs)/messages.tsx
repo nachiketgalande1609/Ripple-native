@@ -40,6 +40,7 @@ export default function Messages() {
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [inputMessage, setInputMessage] = useState("");
     const [isSendingMessage, setIsSendingMessage] = useState(false);
+    const [typingUser, setTypingUser] = useState<number | null>(null);
 
     const drawerRef = useRef<DrawerLayoutAndroid>(null);
     const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerResult | null>(null);
@@ -180,6 +181,25 @@ export default function Messages() {
     };
 
     useEffect(() => {
+        socket.on("typing", (data) => {
+            if (data.receiverId === currentUser.id && selectedUser?.id === data.senderId) {
+                setTypingUser(data.senderId);
+            }
+        });
+
+        socket.on("stopTyping", (data) => {
+            if (data.receiverId === currentUser.id && selectedUser?.id === data.senderId) {
+                setTypingUser(null);
+            }
+        });
+
+        return () => {
+            socket.off("typing");
+            socket.off("stopTyping");
+        };
+    }, [currentUser, selectedUser]);
+
+    useEffect(() => {
         socket.on("receiveMessage", (data) => {
             setMessages((prevMessages) => {
                 const newMessages = { ...prevMessages };
@@ -307,6 +327,50 @@ export default function Messages() {
         };
     }, []);
 
+    const getLastMessageText = (lastMessage: Message | undefined) => {
+        if (!lastMessage) return "No messages yet";
+
+        if (lastMessage.message_text) {
+            return lastMessage.message_text;
+        }
+
+        if (lastMessage.file_url) {
+            const fileType = lastMessage.file_name?.split(".").pop()?.toLowerCase();
+
+            if (!fileType) return "[File]";
+
+            const fileTypeMapping: Record<string, { icon: JSX.Element; label: string }> = {
+                jpg: { icon: <Ionicons name="image" size={16} color="#aaa" />, label: "Image" },
+                jpeg: { icon: <Ionicons name="image" size={16} color="#aaa" />, label: "Image" },
+                png: { icon: <Ionicons name="image" size={16} color="#aaa" />, label: "Image" },
+                gif: { icon: <Ionicons name="image" size={16} color="#aaa" />, label: "Image" },
+                mp4: { icon: <Ionicons name="videocam" size={16} color="#aaa" />, label: "Video" },
+                mov: { icon: <Ionicons name="videocam" size={16} color="#aaa" />, label: "Video" },
+                avi: { icon: <Ionicons name="videocam" size={16} color="#aaa" />, label: "Video" },
+                mp3: { icon: <Ionicons name="musical-note" size={16} color="#aaa" />, label: "Audio" },
+                wav: { icon: <Ionicons name="musical-note" size={16} color="#aaa" />, label: "Audio" },
+                pdf: { icon: <Ionicons name="document" size={16} color="#aaa" />, label: "PDF" },
+                doc: { icon: <Ionicons name="document" size={16} color="#aaa" />, label: "Document" },
+                docx: { icon: <Ionicons name="document" size={16} color="#aaa" />, label: "Document" },
+                xls: { icon: <Ionicons name="document" size={16} color="#aaa" />, label: "Spreadsheet" },
+                xlsx: { icon: <Ionicons name="document" size={16} color="#aaa" />, label: "Spreadsheet" },
+                ppt: { icon: <Ionicons name="document" size={16} color="#aaa" />, label: "Presentation" },
+                pptx: { icon: <Ionicons name="document" size={16} color="#aaa" />, label: "Presentation" },
+            };
+
+            const fileData = fileTypeMapping[fileType] || { icon: <Ionicons name="document" size={16} color="#aaa" />, label: "[File]" };
+
+            return (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                    {fileData.icon}
+                    <Text style={{ color: "#aaa" }}>{fileData.label}</Text>
+                </View>
+            );
+        }
+
+        return "No messages yet";
+    };
+
     return (
         <DrawerLayoutAndroid
             ref={drawerRef}
@@ -326,7 +390,7 @@ export default function Messages() {
                         keyExtractor={(item) => item.id.toString()}
                         renderItem={({ item }) => {
                             const userMessages = messages[item.id] || [];
-                            const latestMessage = userMessages.length > 0 ? userMessages[userMessages.length - 1].message_text : "No messages yet";
+                            const latestMessage = getLastMessageText(userMessages[userMessages.length - 1]);
                             const unreadCount = userMessages.filter((msg) => msg.sender_id === item.id && !msg.read).length;
 
                             return (
@@ -381,6 +445,7 @@ export default function Messages() {
                             selectedFile={selectedFile}
                             setSelectedFile={setSelectedFile}
                             isSendingMessage={isSendingMessage}
+                            typingUser={typingUser}
                         />
                     ) : (
                         <Text style={styles.noUserText}>Select a user to start chatting</Text>

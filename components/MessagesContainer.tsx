@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import useAuthStore from "@/store/authStore";
+import { Animated, Easing } from "react-native";
 import {
     View,
     FlatList,
@@ -50,6 +51,48 @@ interface MessageContainerProps {
     selectedFile: DocumentPicker.DocumentPickerResult | null;
     setSelectedFile: React.Dispatch<React.SetStateAction<DocumentPicker.DocumentPickerResult | null>>;
     isSendingMessage: boolean;
+    typingUser: number | null;
+}
+
+function TypingIndicator() {
+    const dot1 = new Animated.Value(0);
+    const dot2 = new Animated.Value(0);
+    const dot3 = new Animated.Value(0);
+
+    useEffect(() => {
+        const animateDot = (dot: Animated.Value, delay: number) => {
+            Animated.loop(
+                Animated.sequence([
+                    Animated.timing(dot, {
+                        toValue: 1,
+                        duration: 300,
+                        easing: Easing.linear,
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(dot, {
+                        toValue: 0.3,
+                        duration: 300,
+                        easing: Easing.linear,
+                        useNativeDriver: true,
+                    }),
+                ])
+            ).start();
+        };
+
+        animateDot(dot1, 0);
+        animateDot(dot2, 150);
+        animateDot(dot3, 300);
+    }, []);
+
+    return (
+        <View style={styles.typingIndicatorContainer}>
+            <View style={styles.typingBubble}>
+                <Animated.View style={[styles.typingDot, { opacity: dot1 }]} />
+                <Animated.View style={[styles.typingDot, { opacity: dot2 }]} />
+                <Animated.View style={[styles.typingDot, { opacity: dot3 }]} />
+            </View>
+        </View>
+    );
 }
 
 export default function MessagesContainer({
@@ -61,6 +104,7 @@ export default function MessagesContainer({
     selectedFile,
     setSelectedFile,
     isSendingMessage,
+    typingUser,
 }: MessageContainerProps) {
     const currentUser = useAuthStore((state) => state.user);
     const flatListRef = useRef<FlatList>(null);
@@ -74,13 +118,13 @@ export default function MessagesContainer({
                 flatListRef.current?.scrollToEnd({ animated: true });
             }, 100);
         }
-    }, [selectedUser, messages[selectedUser.id]]);
+    }, [selectedUser, typingUser, messages[selectedUser.id]]);
 
     useEffect(() => {
         const keyboardListener = Keyboard.addListener("keyboardDidShow", () => {
             setTimeout(() => {
                 flatListRef.current?.scrollToEnd({ animated: true });
-            }, 10);
+            }, 100);
         });
 
         return () => keyboardListener.remove();
@@ -191,6 +235,11 @@ export default function MessagesContainer({
                             );
                         }}
                     />
+                    {typingUser === selectedUser.id && (
+                        <View style={styles.typingIndicatorWrapper}>
+                            <TypingIndicator />
+                        </View>
+                    )}
                     <MessageInput
                         inputMessage={inputMessage}
                         setInputMessage={setInputMessage}
@@ -426,5 +475,30 @@ const styles = StyleSheet.create({
     fullImage: {
         width: "90%",
         height: "80%",
+    },
+    typingIndicatorContainer: {
+        alignSelf: "flex-start",
+        marginLeft: 10,
+        marginBottom: 5,
+    },
+    typingBubble: {
+        padding: 8,
+        borderRadius: 15,
+        flexDirection: "row",
+        alignItems: "center",
+        width: 50,
+        justifyContent: "space-around",
+    },
+    typingDot: {
+        width: 6,
+        height: 6,
+        backgroundColor: "#bbb",
+        borderRadius: 3,
+        marginHorizontal: 2,
+    },
+    typingIndicatorWrapper: {
+        alignSelf: "flex-start",
+        marginLeft: 10,
+        marginBottom: 5,
     },
 });
