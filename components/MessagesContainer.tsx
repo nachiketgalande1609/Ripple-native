@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     messageWrapper: {
         flexDirection: "row",
         alignItems: "baseline",
-        marginVertical: 10,
+        marginVertical: 5,
         maxWidth: "80%",
     },
     currentUserWrapper: {

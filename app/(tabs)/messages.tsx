@@ -331,7 +331,7 @@ export default function Messages() {
         if (!lastMessage) return "No messages yet";
 
         if (lastMessage.message_text) {
-            return lastMessage.message_text;
+            return lastMessage.message_text.trim();
         }
 
         if (lastMessage.file_url) {
