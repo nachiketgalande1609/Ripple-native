@@ -91,7 +91,7 @@ const Post: React.FC<PostProps> = ({ post, userId, fetchPosts }) => {
             {/* Post Image */}
             {post.file_url && (
                 <TouchableOpacity>
-                    <Image source={{ uri: post.file_url }} style={styles.image} />
+                    <Image source={{ uri: post.file_url }} style={{ width: width, height: (post.image_height / post.image_width) * width }} />
                 </TouchableOpacity>
             )}
 
@@ -179,11 +179,6 @@ const styles = StyleSheet.create({
     content: {
         color: "#ffffff",
         fontSize: 14,
-    },
-
-    image: {
-        width: width,
-        height: width,
     },
     actions: {
         paddingHorizontal: 14,
